@@ -1,6 +1,6 @@
 ---
 title: "Visium Spatial Tx - 10.correlation"
-author: 'K.Lebrigand, R.Waldmann'
+author: 'K.Lebrigand'
 date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
 output:
   html_document:
