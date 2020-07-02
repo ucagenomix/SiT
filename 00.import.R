@@ -11,13 +11,6 @@ library(cowplot)
 library(metap)
 library(formattable)
 
-custom.pal <- c("grey","#FF9B00","#EC380B")
-
-markers <- c("Gad1","Gad2","Maf","Sst","Foxp1","Isl1","Htr3a","Dlx6os1","Dlx2","Nrxn3","Synpr","Slc17a6","Fabp7","Reln","Eomes","Vim","Top2a","Ube2c","Mki67","Ccnd2","Olig1","Pecam1","Igfbp7","Id2","Neurod6","Neurod2")
-markers2 <- c("Olig1","Gad1","Gad2","Slc17a6","Slc17a7","Snap25","Gfap","Id2","Neurod1","Neurod2","Neurod6","Cd63","Rora","Calb2","Nr2f2","Htr3a","Dcx","Pax6","Eomes","Vim","S100b","Rbfox1","Ccnd2","Synpr","Mef2c","Pde1c")
-precursors <- c("Mef2c","Erbb4","Plcxd3","Tspan7","Satb1","Synpr","Reln","Mpped1","Id2","Top2a","Cenpf","Ube2c","Olig1","Calb2","Pecam1","Cldn5","Igfbp7","Gad1","Gad2","Nrgn","Rora","Unc5c","Mdk","Neurod2","Slc17a6","Dlx1","Pbx3","Htr3a","Ckb","Cd63","Cd9","Slc6a5")
-sub.markers <- c("Npy","Calb2","Nr2f2","Th","Cck","Reln","Pvalb","Nos1","Htr3a","Ccnd2","Id2","Synpr","Mef2c","Reln","Neurod6")
-
 ggplotColours <- function(n = 6, h = c(0, 360) + 15){
   if ((diff(h) %% 360) < 1) h[2] <- h[2] - 360/n
   hcl(h = (seq(h[1], h[2], length = n)), c = 100, l = 65)
