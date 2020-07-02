@@ -1,0 +1,222 @@
+---
+title: "Visium Spatial Tx - Mouse Hippocampus - 11.zoom"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr) CNRS Senior Scientist - Computational Biology'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+# Loading hip142078 and hip142079
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/")
+source("00.import.R")
+
+hip142078 <- readRDS("./output/hip142078.nanopore.rds")
+hip142079 <- readRDS("./output/hip142079.nanopore.rds")
+mob164315 <- readRDS("./output/mob164315.nanopore.rds")
+
+avg.iso.hip142078 <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="ISO")
+avg.iso.hip142078 <- scale_my_data(avg.iso.hip142078, assay="ISO")
+avg.iso.hip142079 <- AverageExpression(object = hip142079, return.seurat = TRUE, assay="ISO")
+avg.iso.hip142079 <- scale_my_data(avg.iso.hip142079, assay="ISO")
+
+```
+
+## Isoform switch in hip142079
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=8 }
+
+DefaultAssay(object = hip142079) <- "ISO"
+general <- c('Aldoa','Arl2bp','Caly','Capzb','Cdc42','Clta','Cltb','Cnih2','Dbndd2','Dtnbp1','Faim','Ftl1','Gnas','Kctd13','Kctd17','Ly6h','Mrpl48','Myl6','Nbdy','Nkain4','Olfm2','Rps6','Rtn4','Sept5','Sft2d1','Snap25','Vti1b')
+
+lst <- c()
+for (i in (1:length(general))){
+  x <- rownames(hip142079@assays$ISO@counts)[grep(paste("^",general[i],"\\.\\.",sep=""), rownames(hip142079@assays$ISO@counts))]
+  lst <- c(lst,x)
+}
+
+iso.switching = read.delim("./output/hip142079.isoswitch.top.csv", sep=",", stringsAsFactors = F)
+iso.switching$key <- paste(iso.switching$geneId,iso.switching$transcriptId, sep="..")
+lst <- lst[lst %in% iso.switching$key == TRUE]
+DotPlot(object = hip142079, features = lst, scale.max = 100) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) # RotatedAxis
+
+DefaultAssay(object = hip142079) <- "Spatial"
+DotPlot(object = hip142079, features = general, scale.max = 100, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+pdf("figures/isoswitch.pdf", width=36, height=8, useDingbats=FALSE)
+DefaultAssay(object = hip142079) <- "ISO"
+DotPlot(object = hip142079, features = lst, scale.max = 100) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+DefaultAssay(object = hip142079) <- "Spatial"
+print(DotPlot(object = hip142079, features = general, scale.max = 100, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 45, hjust = 1))) # 
+dev.off()
+
+
+```
+
+## Snap25
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=8 }
+
+DefaultAssay(object = hip142078) <- "Spatial"
+DefaultAssay(object = hip142079) <- "SCT"
+SpatialFeaturePlot(hip142079, features = "Snap25", alpha = c(0.1, 1), pt.size.factor =2)
+
+x <- unique(rownames(hip142078@assays$ISO@scale.data)[grep(paste("^Snap25\\.\\.",sep=""), rownames(hip142078@assays$ISO@scale.data))])
+x <- c("Snap25..ENSMUST00000110098.3","Snap25..ENSMUST00000028727.10")
+SpatialFeaturePlot(hip142078, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+SpatialFeaturePlot(hip142079, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+
+DotPlot(hip142078, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+DotPlot(hip142079, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+#avg.junc.scale <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="JUNC")
+#avg.junc.scale <- scale_my_data(avg.junc.scale, assay="JUNC")
+
+pheatmap(avg.iso.hip142078@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+pheatmap(avg.iso.hip142079@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+```
+
+## Gnas
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=8 }
+
+x <- unique(rownames(hip142078@assays$ISO@scale.data)[grep(paste("^Gnas\\.\\.",sep=""), rownames(hip142078@assays$ISO@scale.data))])
+x <- c("Gnas..ENSMUST00000109087.7","Gnas..ENSMUST00000156623.7")
+SpatialFeaturePlot(hip142078, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+SpatialFeaturePlot(hip142079, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+
+DotPlot(hip142078, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+DotPlot(hip142079, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+#avg.junc.scale <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="JUNC")
+#avg.junc.scale <- scale_my_data(avg.junc.scale, assay="JUNC")
+
+pheatmap(avg.iso.hip142078@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+pheatmap(avg.iso.hip142079@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+hip142078@meta.data$gnas_ratio <- abs(hip142078@assays$ISO@scale.data["Gnas..ENSMUST00000109087.7",]/hip142078@assays$ISO@scale.data["Gnas..ENSMUST00000156623.7",])
+p1 <- VlnPlot(hip142078,x)
+hip142079@meta.data$gnas_ratio <- abs(hip142079@assays$ISO@scale.data["Gnas..ENSMUST00000109087.7",]/hip142079@assays$ISO@scale.data["Gnas..ENSMUST00000156623.7",])
+p2 <- VlnPlot(hip142079,x)
+plot_grid(p1,p2)
+
+```
+
+## Bin1
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=8 }
+
+x <- unique(rownames(hip142078@assays$ISO@scale.data)[grep(paste("^Bin1\\.\\.",sep=""), rownames(hip142078@assays$ISO@scale.data))])
+x <- c("Bin1..ENSMUST00000234496.1","Bin1..ENSMUST00000025239.8")
+SpatialFeaturePlot(hip142078, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+SpatialFeaturePlot(hip142079, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+
+DotPlot(hip142078, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+DotPlot(hip142079, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+#avg.junc.scale <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="JUNC")
+#avg.junc.scale <- scale_my_data(avg.junc.scale, assay="JUNC")
+
+pheatmap(avg.iso.hip142078@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+pheatmap(avg.iso.hip142079@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+hip142078@meta.data$bin1_ratio <- abs(hip142078@assays$ISO@scale.data["Bin1..ENSMUST00000234496.1",]/hip142078@assays$ISO@scale.data["Bin1..ENSMUST00000025239.8",])
+p1 <- VlnPlot(hip142078,"bin1_ratio")
+hip142079@meta.data$bin1_ratio <- abs(hip142079@assays$ISO@scale.data["Bin1..ENSMUST00000234496.1",]/hip142079@assays$ISO@scale.data["Bin1..ENSMUST00000025239.8",])
+p2 <- VlnPlot(hip142079,"bin1_ratio")
+plot_grid(p1,p2)
+
+```
+
+## Scna
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=8 }
+
+x <- unique(rownames(hip142078@assays$ISO@scale.data)[grep(paste("^Snca\\.\\.",sep=""), rownames(hip142078@assays$ISO@scale.data))])
+x <- c("Snca..ENSMUST00000114268.4","Snca..ENSMUST00000163779.7")
+SpatialFeaturePlot(hip142078, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+SpatialFeaturePlot(hip142079, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+
+DotPlot(hip142078, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+DotPlot(hip142079, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+#avg.junc.scale <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="JUNC")
+#avg.junc.scale <- scale_my_data(avg.junc.scale, assay="JUNC")
+
+pheatmap(avg.iso.hip142078@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+pheatmap(avg.iso.hip142079@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+hip142078@meta.data$snca_ratio <- abs(hip142078@assays$ISO@scale.data["Snca..ENSMUST00000114268.4",]/hip142078@assays$ISO@scale.data["Snca..ENSMUST00000163779.7",])
+p1 <- VlnPlot(hip142078,"snca_ratio")
+hip142079@meta.data$snca_ratio <- abs(hip142079@assays$ISO@scale.data["Snca..ENSMUST00000114268.4",]/hip142079@assays$ISO@scale.data["Snca..ENSMUST00000163779.7",])
+p2 <- VlnPlot(hip142079,"snca_ratio")
+plot_grid(p1,p2)
+
+```
+
+## Plp1
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=8 }
+
+DefaultAssay(mob164315) <- "Spatial"
+x <- unique(rownames(mob164315@assays$ISO@scale.data)[grep(paste("^Plp1\\.\\.",sep=""), rownames(mob164315@assays$ISO@scale.data))])
+SpatialFeaturePlot(mob164315, features = x, alpha = c(0.1, 1), pt.size.factor =2)
+
+DefaultAssay(mob164315) <- "SCT"
+SpatialFeaturePlot(mob164315, features = "Plp1", alpha = c(0.1, 1), pt.size.factor =2)
+
+DefaultAssay(mob164315) <- "SCT"
+SpatialFeaturePlot(mob164315, features = "Plp1", alpha = c(0.1, 1), pt.size.factor =2)
+
+DotPlot(mob164315, features = x) + RotatedAxis() + theme(text = element_text(size = 8), axis.text=element_text(size = 8))
+#avg.junc.scale <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="JUNC")
+#avg.junc.scale <- scale_my_data(avg.junc.scale, assay="JUNC")
+
+pheatmap(avg.iso.hip142078@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+pheatmap(avg.iso.hip142079@assays$ISO@scale.data[sort(x, decreasing=FALSE),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+mob164315@meta.data$plp1_ratio <- mob164315@assays$ISO@scale.data["Plp1..ENSMUST00000033800.12",]/mob164315@assays$ISO@scale.data["Plp1..ENSMUST00000113085.1",]
+VlnPlot(mob164315,"plp1_ratio")
+
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+
