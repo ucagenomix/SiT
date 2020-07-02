@@ -1,6 +1,6 @@
 ---
 title: "Visium Spatial Tx - 10.correlation"
-author: 'K.Lebrigand'
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr) CNRS Senior Scientist - Computational Biology'
 date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
 output:
   html_document:
