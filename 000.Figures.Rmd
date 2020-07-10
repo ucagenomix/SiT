@@ -46,12 +46,56 @@ setwd("/data/10x_data/10x_visium/")
 source("00.import.R")
 
 mob164315 <- readRDS("./output/mob164315.nanopore.rds")
+hip142078 <- readRDS("./output/hip142078.nanopore.rds")
 hip142079 <- readRDS("./output/hip142079.nanopore.rds")
 clusters <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
 
 ```
 
-# Supplementary statistics
+# multi-isoform genes ratio (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+#hip142079 <- subset(hip142079, subset = nFeature_ISO>1)
+#mm <- numeric()
+#for(i in 1:2500){
+#  t <- sapply(strsplit(rownames(hip142079@assays$ISO@counts[hip142079@assays$ISO@counts[,i]>0,]), "\\.\\."), `[`, 1)
+#  multi <- length(t) - length(unique(t))
+#  ratio <- 100*multi/length(t)
+#  print(paste(i,length(t),multi,ratio))
+#  mm <- c(mm,ratio)
+#}
+
+#names(mm) <- colnames(hip142079@assays$ISO@counts)
+#hip142079[['multi']] <- mm
+#hip142079[['multinorm']] <- hip142079[['multi']]/hip142079[['nCount_Spatial']]
+#SpatialFeaturePlot(hip142079, features=c("multi","multinorm","nCount_Spatial"), max.cutoff=c(10,0.0015,30000))
+#ggplot(data=hip142079@meta.data, aes(x=nCount_Spatial, y=multi)) +
+#    geom_point(alpha=0.5, shape=21, color="black") +
+#    theme_minimal() +
+#    theme(legend.position="bottom") +
+#    ylab("multi") +
+#    xlab("nCount") +
+#    theme(legend.position = "none")
+
+```
+
+# Supplementary figure Sept5 (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+tiff("figures/dotplot.sept5.spatial.tif", units="in", width=6, height=6, res=300)
+DefaultAssay(hip142079) <- "Spatial"
+SpatialFeaturePlot(hip142079, features=c("Sept5","Gp1bb"),max.cutoff = 3)
+dev.off()
+tiff("figures/dotplot.sept5.isog.tif", units="in", width=6, height=6, res=300)
+DefaultAssay(hip142079) <- "ISOG"
+SpatialFeaturePlot(hip142079, features=c("Sept5","Gp1bb"),max.cutoff = 3)
+dev.off()
+
+```
+
+# Supplementary statistics (not retained)
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -89,7 +133,7 @@ clusters <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactor
 
 ```
 
-# Supplementary dotplot (mob+hip79)
+# Supplementary fig.3
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -106,12 +150,17 @@ for (i in (1:length(general))){
 
 tiff("figures/dotplot.hip.iso.tif", units="in", width=16, height=8, res=300)
 DefaultAssay(object = hip142079) <- "ISO"
-DotPlot(object = hip142079, features = lst, scale=TRUE, scale.max = 100, scale.min = 0) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+DotPlot(object = hip142079, features = lst, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 dev.off()
 
 tiff("figures/dotplot.hip.gene.tif", units="in", width=24, height=6, res=300)
 DefaultAssay(object = hip142079) <- "SCT"
-print(DotPlot(object = hip142079, features = general, scale=TRUE, scale.max = 100, scale.min = 0, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+print(DotPlot(object = hip142079, features = general, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+dev.off()
+
+DefaultAssay(object = hip142079) <- "ISOG"
+tiff("figures/dotplot.hip.isog.tif", units="in", width=16, height=6, res=300)
+print(DotPlot(object = hip142079, features = general, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "purple")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
 dev.off()
 
 # mob
@@ -137,9 +186,14 @@ DefaultAssay(object = mob164315) <- "SCT"
 print(DotPlot(object = mob164315, features = general, scale.max = 100, scale.min = 0, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
 dev.off()
 
+DefaultAssay(object = mob164315) <- "ISOG"
+tiff("figures/dotplot.mob.isog.tif", units="in", width=6, height=4, res=300)
+print(DotPlot(object = mob164315, features = general, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2,cols = c("lightgrey", "purple")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+dev.off()
+
 ```
 
-# Main fig.2d
+# Main fig.2b
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -153,7 +207,7 @@ dev.off()
 
 ```
 
-# Main fig.2e-1
+# Main fig.2c
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -163,7 +217,7 @@ ggplot(data=hip142079@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterNa
   geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
 
-tiff("figures/fig2e-1.tif", units="in", width=8, height=6, res=300)
+tiff("figures/fig.2c.tif", units="in", width=8, height=6, res=300)
 ggplot(data=hip142079@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
   geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
@@ -173,11 +227,9 @@ ggplot(data=hip142079@meta.data, aes(x=ClusterName,y=AtoI_detected, group=Cluste
   geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
   scale_y_continuous(limits=c(0,50), breaks=seq(0,50,10), expand = c(0, 0))
 
-#SpatialFeaturePlot(hip142079, features = c("AtoI_detected"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(30))
-
 ```
 
-# Main fig.2e-2
+# Main fig.2c-2
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -188,7 +240,7 @@ pheatmap(avg@assays$SCT@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=F
 #pheatmap(avg@assays$SCT@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
 #dev.off()
 
-tiff("figures/fig2e-2.tif", units="in", width=8, height=6, res=300)
+tiff("figures/fig2c-2.tif", units="in", width=8, height=6, res=300)
 pheatmap(avg@assays$SCT@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
 dev.off()
 
@@ -328,7 +380,7 @@ plot_grid(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,ncol=4)
 
 ```
 
-# Main fig.2e (hip, Snap25 isoforms)
+# Main fig.1e (hip, Snap25 isoforms)
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -338,7 +390,7 @@ SpatialFeaturePlot(hip142079, features = x, pt.size.factor=1.6, alpha = c(1, 1))
 
 ```
 
-# Main fig.2b (mob, Plp1 isoforms)
+# Main fig.1b (mob, Plp1 isoforms)
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -348,7 +400,7 @@ SpatialFeaturePlot(mob164315, features = x, pt.size.factor=1.6, alpha = c(1, 1))
 
 ```
 
-# Supplementary single cell deconvolution per region (mob, Plp1 story)
+# Supplementary fig.8 single cell deconvolution per region (mob, Plp1 story)
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -388,39 +440,60 @@ p4 <- DotPlot(sub, features="Plp1", group.by = "ClusterName", scale.max=100, col
 
 plot_grid(p1,p2,p3,p3,ncol=4)
 
-tiff("figures/sup.mob.plp1.tif", units="in", width=18, height=4, res=300)
+tiff("figures/sup.fig8.plp1.tif", units="in", width=18, height=4, res=300)
 plot_grid(p1,p2,ncol=5)
 dev.off()
 
-tiff("figures/sup.mob.plp1-2.tif", units="in", width=10, height=4, res=300)
+tiff("figures/sup.fig8.plp1-2.tif", units="in", width=10, height=4, res=300)
 plot_grid(p3,p4,ncol=2)
 dev.off()
 
-#sub <- subset(tepe, subset = ClusterName %in% c("MyOligo","OEC1","OEC2","OEC3","OEC4","OEC5"))
-#dim(sub)
-#table(sub@active.ident)
-#sub <- SetIdent(sub, value="ClusterName")
-#markers <- FindMarkers(sub, ident.1="MyOligo", ident.2=c("OEC1","OEC2","OEC3","OEC4","OEC5"), only.pos = FALSE)
-#head(markers,20)
-
 ```
 
-# Supplementary spatial markers
+# Supplementary fig.5 - spatial markers
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
 
 DefaultAssay(hip142079) <- "SCT"
-SpatialDimPlot(hip142079, pt.size.factor =1.6)
+hip142079 <- subset(hip142079, subset = nFeature_ISO>1)
+SpatialDimPlot(hip142079, pt.size.factor =1.6, label=TRUE)
+
+markers <- read.delim("./output/hip142079.markers.csv", sep=",", stringsAsFactors = F)
+markers <- markers[markers$pct.2<0.5,]
+top <- markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+DotPlot(object = hip142079, features = unique(top$gene), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
+SpatialFeaturePlot(object = hip142079, features = c("C1ql2","Myo5b","Slc6a3","Zic1","Fibcd1","Nrep","Mag","Hpcal1","Camk2n1","Myl4","Gfap","Mbp"), pt.size.factor=1.6, alpha = c(1, 1))
 
 tiff("figures/sup.markers.hip.tif", units="in", width=14, height=12, res=300)
-SpatialFeaturePlot(hip142079, features = c("Camk2n1","Myl4","Mal","Spink8","Mbp","Nnat","Slc18a2","Zic1"), slot="data", pt.size.factor=1.6, alpha = c(1, 1))
+SpatialFeaturePlot(object = hip142079, features = c("C1ql2","Myo5b","Slc6a3","Zic1","Fibcd1","Nrep","Mag","Hpcal1","Camk2n1","Myl4","Gfap","Calb2"), pt.size.factor=1.6, alpha = c(1, 1))
+dev.off()
+
+tiff("figures/sup.markers.dotplot.hip.tif", units="in", width=10, height=6, res=300)
+DotPlot(object = hip142079, features = rev(c("C1ql2","Myo5b","Slc6a3","Zic1","Fibcd1","Nrep","Mag","Hpcal1","Camk2n1","Myl4","Gfap","Mbp")), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
 dev.off()
 
 DefaultAssay(mob164315) <- "SCT"
-SpatialDimPlot(mob164315, pt.size.factor =1.6)
+tiff("figures/mob.tif", units="in", width=6, height=6, res=300)
+SpatialDimPlot(mob164315, pt.size.factor =2)
+dev.off()
+
+DotPlot(object = mob164315, features = c("Nrgn","Tbx21","Bc1","Eomes","Nnat"), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red"))
 
 tiff("figures/sup.markers.mob.tif", units="in", width=6, height=6, res=300)
 SpatialFeaturePlot(mob164315, features = c("Nrgn","Tbx21","Bc1","Eomes","Nnat"), slot="data", pt.size.factor=1.6, alpha = c(1, 1))
+dev.off()
+
+markers <- read.delim("./output/mob164315.markers.csv", sep=",", stringsAsFactors = F)
+markers <- markers[markers$pct.2<0.5,]
+top <- markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+DotPlot(object = mob164315, features = unique(top$gene), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
+
+tiff("figures/sup.markers.mob.tif", units="in", width=6, height=6, res=300)
+SpatialFeaturePlot(object = mob164315, features = c("Gsn","Trh","Cnot3","Nrgn","Spp1"), pt.size.factor=2, alpha = c(1, 1))
+dev.off()
+
+tiff("figures/sup.markers.dotplot.mob.tif", units="in", width=10, height=6, res=300)
+DotPlot(object = mob164315, features = rev(c("Gsn","Trh","Cnot3","Nrgn","Spp1")), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
 dev.off()
 
 ```
@@ -437,7 +510,7 @@ sum(hip142079[['AtoI_A']], na.rm=TRUE)
 
 ```
 
-# Main fig.2 - 86 editing sites heatmap
+# Main fig.2x - 86 editing sites heatmap (not retained)
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
 
@@ -534,7 +607,7 @@ ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
 
 ```
 
-# Main fig.2 - Calm1 editing
+# Main fig.2d - Calm1 editing
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
 
@@ -553,12 +626,6 @@ p4 <- ggplot(data=hip142079@meta.data, aes(x=ClusterName,y=editing_ratio, group=
   coord_flip() + labs(title = "\n\nEditing ratio per region\n")
 
 plot_grid(p1,p2,p3,p4, ncol=4)
-
-#ggplot(data=hip142079@meta.data, aes(x=ClusterName,y=geneRatio, group=ClusterName))+
-#  geom_violin(draw_quantiles = c(.25, .5, .75, .95), na.rm = TRUE) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
-  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
-#  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0)) +
-#  coord_flip() + labs(title = "\n\nEditing ratio per region\n")
 
 ```
 
@@ -677,7 +744,7 @@ write.table(df, file="mob164315.AtoI.csv", sep=",")
 
 ```
 
-# Nanopore/Illumina agreement
+# Supplementary fig.13 - Nanopore/Illumina agreement
 
 ```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
 
@@ -707,6 +774,103 @@ ggplot(data=agreement, aes(x=QV, y=Agreement)) +
     geom_line()+
   theme_minimal() +
     geom_point()
+dev.off()
+
+
+```
+
+# Supplementary fig.9 - hip78/hip79 correlation
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+breaksList = seq(0.6, 1, by = 0.01)
+
+hip142078 <- subset(hip142078, ident=c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg"))
+
+p1 <- SpatialDimPlot(hip142078)
+p2 <- SpatialDimPlot(hip142079)
+plot_grid(p1,p2)
+
+# Spatial correlation
+avg79 <- AverageExpression(object = hip142079, return.seurat = TRUE, assay="SCT")
+avg78 <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="SCT")
+
+regions <- rownames(avg79@meta.data)
+genes <- intersect(rownames(avg78@assays$SCT@data), rownames(avg79@assays$SCT@data))
+length(genes)
+
+df <- data.frame()
+for (i in (1:length(regions))){
+  
+  df2<- data.frame()
+  for (j in (1:length(regions))){
+    t <- data.frame(avg78@assays$SCT@data[genes,regions[i]], avg79@assays$SCT@data[genes,regions[j]])
+    
+    colnames(t) <- c("avg78","avg79")
+    c <- cor.test(t$avg78, t$avg79)$estimate
+    
+    df[i,j] <-c
+  }
+}
+colnames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+rownames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+
+tiff("figures/Cor.region.spatial.tif", units="in", width=4, height=3, res=300)
+pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
+dev.off()
+
+# Nanopore ISOG correlation
+avg79 <- AverageExpression(object = hip142079, return.seurat = TRUE, assay="ISOG")
+avg78 <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="ISOG")
+
+genes <- intersect(rownames(avg78@assays$ISOG@data), rownames(avg79@assays$ISOG@data))
+length(genes)
+
+df <- data.frame()
+for (i in (1:length(regions))){
+  
+  df2<- data.frame()
+  for (j in (1:length(regions))){
+    t <- data.frame(avg78@assays$ISOG@data[genes,regions[i]], avg79@assays$ISOG@data[genes,regions[j]])
+    
+    colnames(t) <- c("avg78","avg79")
+    c <- cor.test(t$avg78, t$avg79)$estimate
+    
+    df[i,j] <-c
+  }
+}
+colnames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+rownames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+
+tiff("figures/Cor.region.ISOG.tif", units="in", width=4, height=3, res=300)
+pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
+dev.off()
+
+# Nanopore ISO correlation
+avg79 <- AverageExpression(object = hip142079, return.seurat = TRUE, assay="ISO")
+avg78 <- AverageExpression(object = hip142078, return.seurat = TRUE, assay="ISO")
+
+genes <- intersect(rownames(avg78@assays$ISO@data), rownames(avg79@assays$ISO@data))
+length(genes)
+
+df <- data.frame()
+for (i in (1:length(regions))){
+  
+  df2<- data.frame()
+  for (j in (1:length(regions))){
+    t <- data.frame(avg78@assays$ISO@data[genes,regions[i]], avg79@assays$ISO@data[genes,regions[j]])
+    
+    colnames(t) <- c("avg78","avg79")
+    c <- cor.test(t$avg78, t$avg79)$estimate
+    
+    df[i,j] <-c
+  }
+}
+colnames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+rownames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+
+tiff("figures/Cor.region.ISO.tif", units="in", width=4, height=3, res=300)
+pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
 dev.off()
 
 ```
