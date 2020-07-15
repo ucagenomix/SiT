@@ -53,9 +53,7 @@ hip142079 <- Load10X_Spatial(data.dir = "/data/10x_data/000-notebooks/visium/142
 #data <- data[-c(ribo.genes,mito.genes),]
 
 VlnPlot(hip142079, features = c("nCount_Spatial","nFeature_Spatial"), pt.size = 0.1) + NoLegend() + ggtitle("hip142079 nCount_Spatial")
-SpatialFeaturePlot(hip142079, features = c("nCount_Spatial","nFeature_Spatial"), max.cutoff = 30000, pt.size.factor = 2) + 
-  theme(legend.position = "right") + 
-  ggtitle("hip142079 nCount_Spatial")
+SpatialFeaturePlot(hip142079, features = c("nCount_Spatial","nFeature_Spatial"), max.cutoff = 200, pt.size.factor = 2) + theme(legend.position = "right") + ggtitle("hip142079 nCount_Spatial")
 
 ```
 
@@ -91,21 +89,33 @@ hip142079 <- FindClusters(hip142079, verbose = FALSE, resolution = 0.4)
 DimPlot(hip142079, reduction = "umap", label = TRUE) + ggtitle("hip142079")
 SpatialDimPlot(hip142079, label = TRUE, label.size = 3, pt.size.factor = 2) + ggtitle("hip142079")
 
+#SpatialDimPlot(hip142079, interactive = TRUE)
+#top.features <- head(SpatiallyVariableFeatures(hip142079, selection.method = "markvariogram"), 6)
+#SpatialFeaturePlot(brain, features = top.features, ncol = 3, alpha = c(0.1, 1))
+
 ```
 
 # Clusters re-labelling
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
 
-new.cluster.ids <- c("Midbrain","Hippocampus","Isocortex-1","Isocortex-1","Olfactory area","Fiber tracts","Hammons horn","Isocortex-2","Hippocampus","Hypothalamus","Thalamus","Dg","Isocortex-3","Ca3")
+#new.cluster.ids <- c("Midbrain","Hippocampus","Isocortex-2","Entorhinal area","Olfactory area","Fiber tracts","CA1/CA2","Isocortex-1","Optic nerve","Hypothalamus","Thalamus","DG-sg","RSPv2","CA3sp")
+#names(x = new.cluster.ids) <- levels(x = hip142079)
+#hip142079 <- RenameIdents(object = hip142079, new.cluster.ids)
+
+#my_levels <- c("Midbrain","Hippocampus","Isocortex-1","Isocortex-2","Entorhinal area","Olfactory area","RSPv2","Fiber tracts","Optic nerve","Hypothalamus","Thalamus","DG-sg","CA1/CA2","CA3sp")
+# Relevel object@ident
+#hip142079@active.ident <- factor(x = hip142079@active.ident, levels = my_levels)
+
+new.cluster.ids <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-1","Olfactory area","Fiber tracts", "CA1/CA2", "Isocortex-2", "Hippocampus area", "Hypothalamus", "Thalamus", "DG", "Retrosplenial area", "CA3")
 names(x = new.cluster.ids) <- levels(x = hip142079)
 hip142079 <- RenameIdents(object = hip142079, new.cluster.ids)
 
-my_levels <- c("Midbrain","Hippocampus","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Isocortex-3","Hammons horn","Thalamus","Hypothalamus","Ca3","Dg")
+my_levels <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
 # Relevel object@ident
 hip142079@active.ident <- factor(x = hip142079@active.ident, levels = my_levels)
 
-SpatialDimPlot(hip142079, label = TRUE, label.size = 3, pt.size.factor =2) + ggtitle("hip142079")
+SpatialDimPlot(hip142079, label = TRUE, label.size = 3, pt.size.factor =1.5) + ggtitle("hip142079")
 
 ```
 
@@ -144,6 +154,10 @@ pheatmap(ct)
 # Gene Markers Visualization
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8 }
+
+hip142079 <- FindSpatiallyVariableFeatures(hip142079, assay = "SCT", features = VariableFeatures(hip142079)[1:1000], selection.method = "markvariogram")
+top.features <- head(SpatiallyVariableFeatures(hip142079, selection.method = "markvariogram"), 6)
+SpatialFeaturePlot(hip142079, features = top.features, ncol = 3, alpha = c(0.1, 1))
 
 SpatialFeaturePlot(hip142079, features = c("Mbp","Pvalb"), ncol=2, pt.size.factor =2)
 SpatialFeaturePlot(hip142079, features = c("Hopx","Mgp"), ncol=2, pt.size.factor =2)
@@ -237,6 +251,9 @@ p1 + theme(axis.text.x = element_text(size = 6)) + xlab("Cluster")
 hip142079 <- FindSpatiallyVariableFeatures(hip142079, assay = "predClusterName", features = rownames(hip142079@assays$predClusterName@data), r.metric = 5, slot = "data", selection.method = "markvariogram")
 top.clusters <- head(SpatiallyVariableFeatures(hip142079), 12)
 SpatialFeaturePlot(hip142079, features = top.clusters, pt.size.factor = 1, ncol = 2, alpha = c(0.1, 1))
+
+# remove 1 spot outside the brain section in the top of the image
+hip142079 <- subset(hip142079, subset = nCount_Spatial > 105)
 
 saveRDS(hip142079, "./output/hip142079.rds")
 

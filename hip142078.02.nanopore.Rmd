@@ -48,7 +48,7 @@ setwd("/data/10x_data/10x_visium/")
 source("00.import.R")
 
 hip142078 <- readRDS("./output/hip142078.rds")
-clusters <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Isocortex-4", "Thalamus", "Hypothalamus", "Ca3", "Dg", "Outside")
+clusters <- c("Midbrain","Hippocampus","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Ca1sp","Hypothalamus","Thalamus","DG-sg","RSP subiculum","Ca3sp","Outside")
 
 ```
 
@@ -92,7 +92,7 @@ hip142078[["JUNC"]] <- CreateAssayObject(counts = data)
 hip142078 <- NormalizeData(object = hip142078, assay = "JUNC")
 hip142078 <- scale_my_data(hip142078, assay="JUNC")
 
-all = read.delim("./nanopore/hip142078.snp100838.RN3.QV5_snpmatrix.full.txt", stringsAsFactors = F)
+all = read.delim("./nanopore/hip142078.snp100838.RN3.QV6_snpmatrix.csv", sep=",", stringsAsFactors = F)
 data = all[,4:ncol(all)]
 dim(data)
 colnames(data) <- paste(colnames(data),"-1", sep="")
@@ -115,6 +115,9 @@ countG <- data[grep("\\.\\.G",rownames(data)),]
 colnames(countG) <- colnames(data)
 rownames(countG) <- x
 ratio <- countG/(countA+countG)
+
+#countA[is.na(countA)] <- 0
+#countG[is.na(countG)] <- 0
 
 hip142078[['AtoI_A']] <- Matrix::colSums(countA)
 hip142078[['AtoI_G']] <- Matrix::colSums(countG)

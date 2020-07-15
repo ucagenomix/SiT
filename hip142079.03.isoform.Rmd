@@ -48,7 +48,7 @@ setwd("/data/10x_data/10x_visium/")
 source("00.import.R")
 
 hip142079 <- readRDS("./output/hip142079.nanopore.rds")
-clusters <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
 
 ```
 

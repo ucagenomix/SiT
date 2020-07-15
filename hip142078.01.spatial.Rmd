@@ -95,15 +95,16 @@ SpatialDimPlot(hip142078, label = TRUE, label.size = 3, pt.size.factor = 2) + gg
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
 
-new.cluster.ids <- c("Midbrain","Hippocampus","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Isocortex-3","Hammons horn","Isocortex-4","Thalamus","Hypothalamus","Ca3","Dg","Outside")
+
+new.cluster.ids <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area", "CA1/CA2", "Isocortex-2", "Thalamus", "Hypothalamus", "CA3", "DG", "Outside")
 names(x = new.cluster.ids) <- levels(x = hip142078)
 hip142078 <- RenameIdents(object = hip142078, new.cluster.ids)
 
-my_levels <- c("Midbrain","Hippocampus","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Isocortex-3","Hammons horn","Isocortex-4","Thalamus","Hypothalamus","Ca3","Dg","Outside")
+my_levels <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG","Outside")
 # Relevel object@ident
 hip142078@active.ident <- factor(x = hip142078@active.ident, levels = my_levels)
 
-SpatialDimPlot(hip142078, label = TRUE, label.size = 3, pt.size.factor =2) + ggtitle("hip142078")
+SpatialDimPlot(hip142078, label = TRUE, label.size = 3, pt.size.factor =1.5) + ggtitle("hip142078")
 
 ```
 

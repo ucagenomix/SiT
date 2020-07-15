@@ -91,7 +91,7 @@ hip142079[["JUNC"]] <- CreateAssayObject(counts = data)
 hip142079 <- NormalizeData(object = hip142079, assay = "JUNC")
 hip142079 <- scale_my_data(hip142079, assay="JUNC")
 
-all = read.delim("./nanopore/hip142079.snp100838.RN3.QV5_snpmatrix.full.txt", stringsAsFactors = F)
+all = read.delim("./nanopore/hip142079.snp100838.RN3.QV6_snpmatrix.csv", sep=",", stringsAsFactors = F)
 data = all[,4:ncol(all)]
 dim(data)
 colnames(data) <- paste(colnames(data),"-1", sep="")
@@ -115,6 +115,9 @@ colnames(countG) <- colnames(data)
 rownames(countG) <- x
 ratio <- countG/(countA+countG)
 
+#countA[is.na(countA)] <- 0
+#countG[is.na(countG)] <- 0
+
 hip142079[['AtoI_A']] <- Matrix::colSums(countA)
 hip142079[['AtoI_G']] <- Matrix::colSums(countG)
 hip142079[['AtoI_total']] <- hip142079[['AtoI_A']]+hip142079[['AtoI_G']]
@@ -126,6 +129,7 @@ hip142079 <- SetAssayData(hip142079, slot = "data", as.matrix(countG), assay = "
 hip142079 <- SetAssayData(hip142079, slot = "scale.data", as.matrix(ratio), assay = "AtoI")
 
 saveRDS(hip142079, "./output/hip142079.nanopore.rds")
+
 
 ```
 

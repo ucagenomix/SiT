@@ -48,7 +48,25 @@ source("00.import.R")
 mob164315 <- readRDS("./output/mob164315.nanopore.rds")
 hip142078 <- readRDS("./output/hip142078.nanopore.rds")
 hip142079 <- readRDS("./output/hip142079.nanopore.rds")
-clusters <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+#extract Subiculum from CA1/CA2 would be possible
+#i <- subset(hip142079, ident=c("CA1/CA2"))
+#SpatialDimPlot(i)
+#DefaultAssay(i) <- "Spatial"
+#i <- FindVariableFeatures(i, selection.method = "vst", nfeatures = 3000)
+#i <- ScaleData(i, verbose = FALSE)
+#i <- RunPCA(i, npcs = 30, verbose = FALSE)
+#i <- FindNeighbors(i, dims = 1:15)
+#i <- RunUMAP(i, dims = 1:15)
+#i <- FindClusters(i)
+#SpatialDimPlot(i)
+
+#DefaultAssay(object = hip142079) <- "SCT"
+#hip142079 <- FindSpatiallyVariableFeatures(hip142079, assay = "SCT", features = VariableFeatures(hip142079)[1:1000], selection.method = "markvariogram")
+#top.features <- head(SpatiallyVariableFeatures(hip142079, selection.method = "markvariogram"), 60)
+#DotPlot(hip142079, features=top.features) + RotatedAxis()
+#SpatialFeaturePlot(hip142079, features = top.features, ncol = 3, alpha = c(0.1, 1))
 
 ```
 
@@ -205,6 +223,9 @@ tiff("figures/fig2d.tif", units="in", width=20, height=8, res=300)
 SpatialFeaturePlot(hip142079, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
 dev.off()
 
+DefaultAssay(object = hip142079) <- "SCT"
+SpatialFeaturePlot(hip142079, features = c("Mbp"), pt.size.factor=1.6, alpha = c(1, 1))
+
 ```
 
 # Main fig.2c
@@ -335,20 +356,21 @@ plot_grid(p1,p2,p3,ncol=3)
 
 avg <- AverageExpression(object = hip142079, return.seurat = TRUE, assay="predClusterName")
 avg <- ScaleData(avg, assay="predClusterName")
+
 kable(head(sort(avg@assays$predClusterName@scale.data[,"Midbrain"], decreasing=TRUE),5))
 kable(head(sort(avg@assays$predClusterName@scale.data[,"Hippocampus"], decreasing=TRUE),5))
 kable(head(sort(avg@assays$predClusterName@scale.data[,"Isocortex-1"], decreasing=TRUE),5))
 kable(head(sort(avg@assays$predClusterName@scale.data[,"Isocortex-2"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Entorhinal area"], decreasing=TRUE),5))
 kable(head(sort(avg@assays$predClusterName@scale.data[,"Olfactory area"], decreasing=TRUE),5))
 kable(head(sort(avg@assays$predClusterName@scale.data[,"Fiber tracts"], decreasing=TRUE),5))
-kable(head(sort(avg@assays$predClusterName@scale.data[,"Isocortex-3"], decreasing=TRUE),5))
-kable(head(sort(avg@assays$predClusterName@scale.data[,"Fiber tracts"], decreasing=TRUE),5))
-kable(head(sort(avg@assays$predClusterName@scale.data[,"Hammons horn"], decreasing=TRUE),5))
-kable(head(sort(avg@assays$predClusterName@scale.data[,"Fiber tracts"], decreasing=TRUE),5))
-kable(head(sort(avg@assays$predClusterName@scale.data[,"Thalamus"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Ca1/Ca2"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Optic nerve"], decreasing=TRUE),5))
 kable(head(sort(avg@assays$predClusterName@scale.data[,"Hypothalamus"], decreasing=TRUE),5))
-kable(head(sort(avg@assays$predClusterName@scale.data[,"Ca3"], decreasing=TRUE),5))
-kable(head(sort(avg@assays$predClusterName@scale.data[,"Dg"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Thalamus"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"DG-sg"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"RSPv2"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Ca3sp"], decreasing=TRUE),5))
 
 zeisel <- readRDS("./output/zeisel.rds")
 sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[1]], decreasing=TRUE),5))))
@@ -375,8 +397,12 @@ sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$pre
 p11 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[11])) + NoLegend()
 sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[12]], decreasing=TRUE),5))))
 p12 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[12])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[13]], decreasing=TRUE),5))))
+p12 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[13])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[14]], decreasing=TRUE),5))))
+p12 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[14])) + NoLegend()
 
-plot_grid(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,ncol=4)
+plot_grid(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,ncol=4)
 
 ```
 
@@ -503,6 +529,8 @@ dev.off()
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
 
 length(rownames(hip142079@assays$AtoI@counts))
+table(Matrix::rowSums(hip142079@assays$AtoI@data)>0)
+
 sum(hip142079[['AtoI_total']], na.rm=TRUE)
 sum(hip142079[['AtoI_G']], na.rm=TRUE)
 sum(hip142079[['AtoI_A']], na.rm=TRUE)
@@ -510,11 +538,11 @@ sum(hip142079[['AtoI_A']], na.rm=TRUE)
 
 ```
 
-# Main fig.2x - 86 editing sites heatmap (not retained)
+# Main fig.2x - 75 editing sites heatmap (not retained)
 
 ```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
 
-all = read.delim("./nanopore/hip142079.snp100838.RN3.QV5_snpmatrix.full.txt", stringsAsFactors = F)
+all = read.delim("./nanopore/hip142079.snp100838.RN3.QV6_snpmatrix.csv", sep=",", stringsAsFactors = F)
 data = all[,4:ncol(all)]
 dim(data)
 colnames(data) <- paste(colnames(data),"-1", sep="")
@@ -546,7 +574,7 @@ hip142079[["AtoIhigh"]] <- CreateAssayObject(counts = countA)
 hip142079 <- SetAssayData(hip142079, slot = "data", as.matrix(countG), assay = "AtoIhigh")
 
 agg.A <- data.frame()
-for(i in 1:86){
+for(i in 1:75){
   t <- aggregate(hip142079@assays$AtoIhigh@counts[i,], list(hip142079@meta.data$ClusterName), sum)
   agg.A <- rbind(agg.A,t$x)
   print(i)
@@ -555,7 +583,7 @@ colnames(agg.A) <- unique(t$Group.1)
 rownames(agg.A) <- rownames(hip142079@assays$AtoIhigh@counts)
 
 agg.G <- data.frame()
-for(i in 1:86){
+for(i in 1:75){
   t <- aggregate(hip142079@assays$AtoIhigh@data[i,], list(hip142079@meta.data$ClusterName), sum)
   agg.G <- rbind(agg.G,t$x)
   print(i)
@@ -569,6 +597,7 @@ dim(ratio)
 
 pheatmap(as.matrix(ratio), cluster_rows=TRUE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
 
+avg <- AverageExpression(object = hip142079, return.seurat = TRUE, assay="SCT")
 avg[["AtoIhigh"]] <- CreateAssayObject(counts = ratio)
 VlnPlot(avg,features="Calm1:12:100207186", slot="data",assay="AtoIhigh")
 VlnPlot(avg,features="Scn1b:7:31116973", slot="data",assay="AtoIhigh")
@@ -776,7 +805,6 @@ ggplot(data=agreement, aes(x=QV, y=Agreement)) +
     geom_point()
 dev.off()
 
-
 ```
 
 # Supplementary fig.9 - hip78/hip79 correlation
@@ -785,7 +813,8 @@ dev.off()
 
 breaksList = seq(0.6, 1, by = 0.01)
 
-hip142078 <- subset(hip142078, ident=c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg"))
+hip142078 <- subset(hip142078, ident=c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG"))
+hip142079 <- subset(hip142079, ident=c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG"))
 
 p1 <- SpatialDimPlot(hip142078)
 p2 <- SpatialDimPlot(hip142079)
@@ -812,8 +841,8 @@ for (i in (1:length(regions))){
     df[i,j] <-c
   }
 }
-colnames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
-rownames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+colnames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+rownames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
 
 tiff("figures/Cor.region.spatial.tif", units="in", width=4, height=3, res=300)
 pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
@@ -839,8 +868,8 @@ for (i in (1:length(regions))){
     df[i,j] <-c
   }
 }
-colnames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
-rownames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+colnames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+rownames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
 
 tiff("figures/Cor.region.ISOG.tif", units="in", width=4, height=3, res=300)
 pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
@@ -866,8 +895,8 @@ for (i in (1:length(regions))){
     df[i,j] <-c
   }
 }
-colnames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
-rownames(df) <- c("Midbrain", "Hippocampus", "Isocortex-1", "Isocortex-2", "Olfactory area", "Fiber tracts", "Isocortex-3", "Hammons horn", "Thalamus", "Hypothalamus", "Ca3", "Dg")
+colnames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+rownames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
 
 tiff("figures/Cor.region.ISO.tif", units="in", width=4, height=3, res=300)
 pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
