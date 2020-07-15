@@ -11,8 +11,6 @@ This github provides all R scripts required for SiT dataset analysis
 
 * **SiT data are deposited throught GEO, accession number GSE153859 (secure access token required)**
 
-
-Note:
-hip142078 -> CBS1
-hip142079 -> CBS2
-mob164315 -> MOB
+* hip142078 -> CBS1
+* hip142079 -> CBS2
+* mob164315 -> MOB
