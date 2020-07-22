@@ -1,0 +1,518 @@
+---
+title: "SiT - Short read / Long read correlation"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+```
+
+# Loading data
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/")
+library("reshape2")
+library(gameofthrones)
+source("00.import.R")
+
+```
+
+# MOB
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium <- readRDS("./output/MOB.nanopore.rds")
+col=ggplotColours(n = length(unique(visium@active.ident)))
+
+median(visium@meta.data$nCount_Spatial)
+median(visium@meta.data$nCount_ISOG)
+median(visium@meta.data$nCount_ISO)
+
+median(visium@meta.data$nFeature_Spatial)
+median(visium@meta.data$nFeature_ISOG)
+median(visium@meta.data$nFeature_ISO)
+
+```
+
+## Percentage Illumina UMIs / Features seen in Nanopore data
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium@meta.data$nCount_profiled <- visium@meta.data$nCount_ISOG*100/visium@meta.data$nCount_Spatial
+mean(visium@meta.data$nCount_profiled)
+visium@meta.data$nFeature_profiled <- visium@meta.data$nFeature_ISOG*100/visium@meta.data$nFeature_Spatial
+mean(visium@meta.data$nFeature_profiled)
+
+```
+
+## Correlation illumina/Nanopore (r²)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+#pdf("Correlation.plots.pdf", width=10, height=8, useDingbats=FALSE)
+
+p1 <- ggplot(data=visium@meta.data, aes(x=nFeature_Spatial,y=nFeature_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[visium@active.ident]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+      ggtitle("Features per cell") +
+      #geom_abline(slope=1, intercept=-15, linetype=3) +
+      labs(x="Illumina",y="Nanopore")
+
+x <- cor.test(visium@meta.data$nFeature_Spatial, visium@meta.data$nFeature_ISOG, method="pearson")$estimate
+x*x
+
+p2 <- ggplot(data=visium@meta.data, aes(x=nCount_Spatial,y=nCount_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[visium@active.ident]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+      ggtitle("UMIs per cell") +
+      #geom_abline(slope=1, intercept=-15, linetype=3) +
+      labs(x="Illumina",y="Nanopore")
+
+x <- cor.test(visium@meta.data$nCount_Spatial, visium@meta.data$nCount_ISOG, method="pearson")$estimate
+x*x
+
+tiff("figures/scatterplot.mob.tif", units="in", width=4, height=8, res=300)
+plot_grid(p1, p2, ncol=1)
+dev.off()
+
+plot1 <- ggplot(data=visium@meta.data, aes(nFeature_Spatial)) + 
+                geom_histogram(breaks=seq(0, 8000, by = 100),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="Illumina nFeature_Spatial") + 
+                labs(x="nFeatures", y="Cells")
+
+plot2 <- ggplot(data=visium@meta.data, aes(nFeature_ISOG)) + 
+                geom_histogram(breaks=seq(0, 8000, by = 100),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="Nanopore nFeature_ISOG") + 
+                labs(x="nFeatures", y="Cells")
+
+plot_grid(plot1, plot2)
+
+#dev.off()
+
+```
+
+## Correlation Illumina / Nanopore (r)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+common.cells <- rownames(visium@meta.data)
+common.genes <- intersect(rownames(visium@assays$Spatial@data), rownames(visium@assays$ISOG@data))
+common.genes.nomt <- common.genes[grep("mt-", common.genes, invert = TRUE)]
+common.genes.nomtrp <- common.genes.nomt[grep("Rp[ls]", common.genes.nomt, invert = TRUE)]
+length(common.genes.nomtrp)
+
+df <- data.frame()
+for (i in (1:length(common.cells))){
+  c <- intersect(names(which(visium@assays$Spatial@data[common.genes.nomtrp,common.cells[i]]>0)), names(which(visium@assays$ISOG@data[common.genes.nomtrp,common.cells[i]] > 0)))
+  #print(paste(i,common.cells[i],length(c),sep=","))
+  t <- data.frame(visium@assays$Spatial@data[c,common.cells[i]], visium@assays$ISOG@data[c,common.cells[i]])
+  colnames(t) <- c("illu","nano")
+  
+  if(length(c)>100){
+    df <- rbind(df, data.frame("Illu/ONT same cell",cor.test(t$illu, t$nano)$estimate))
+  }
+}
+colnames(df) <- c("type","cor")
+rownames(df) <- c()
+median(df$cor, na.rm=TRUE)
+
+dfmob.1 <- df
+
+df2 <- data.frame()
+for (i in (1:length(common.cells))){
+  #print (i)
+  random <- sample(1:length(common.cells), 2, replace=T)
+  
+  for (j in (1:length(random))){
+    if(visium@meta.data$ClusterName[i] != visium@meta.data$ClusterName[random[j]]){
+      c <- intersect(names(which(visium@assays$Spatial@data[common.genes.nomtrp,common.cells[random[j]]]>0)), names(which(visium@assays$ISOG@data[common.genes.nomtrp,common.cells[i]] > 0)))
+      t <- data.frame(visium@assays$Spatial@data[c,common.cells[random[j]]], visium@assays$ISOG@data[c,common.cells[i]])
+      colnames(t) <- c("illu","nano")
+      #print(paste(i,common.cells[i],length(c),sep=","))
+      if(length(c)>100){
+        df2 <- rbind(df2, data.frame("Illu/ONT different cell",cor.test(t$illu, t$nano)$estimate))
+      }
+    }
+  }
+}
+colnames(df2) <- c("type","cor")
+rownames(df2) <- c()
+median(df2$cor, na.rm=TRUE)
+
+dfmob.2 <- df2
+
+```
+Nanopore/Illumina same cell
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+median(df$cor)
+```
+Nanopore/Illumina different cell
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+median(df2$cor)
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=6, fig.width=12}
+
+whole <- rbind(df,df2)
+#pdf("figures/fig.2c.pdf", width=10, height=8, useDingbats=FALSE)
+ggplot(whole, aes(x=type, y=cor, fill=type)) +
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle("Transcriptomics correlation") +
+  theme_classic()
+#dev.off()
+
+```
+
+# CBS1
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium <- readRDS("./output/CBS1.nanopore.rds")
+col=ggplotColours(n = length(unique(visium@active.ident)))
+
+median(visium@meta.data$nCount_Spatial)
+median(visium@meta.data$nCount_ISOG)
+median(visium@meta.data$nCount_ISO)
+
+median(visium@meta.data$nFeature_Spatial)
+median(visium@meta.data$nFeature_ISOG)
+median(visium@meta.data$nFeature_ISO)
+
+```
+
+## Percentage Illumina UMIs / Features seen in Nanopore data
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium@meta.data$nCount_profiled <- visium@meta.data$nCount_ISOG*100/visium@meta.data$nCount_Spatial
+mean(visium@meta.data$nCount_profiled)
+visium@meta.data$nFeature_profiled <- visium@meta.data$nFeature_ISOG*100/visium@meta.data$nFeature_Spatial
+mean(visium@meta.data$nFeature_profiled)
+
+```
+
+## Correlation illumina/Nanopore (r²)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+#pdf("Correlation.plots.pdf", width=10, height=8, useDingbats=FALSE)
+
+p1 <- ggplot(data=visium@meta.data, aes(x=nFeature_Spatial,y=nFeature_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[visium@active.ident]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+      ggtitle("Features per cell") +
+      #geom_abline(slope=1, intercept=-15, linetype=3) +
+      labs(x="Illumina",y="Nanopore")
+
+x <- cor.test(visium@meta.data$nFeature_Spatial, visium@meta.data$nFeature_ISOG, method="pearson")$estimate
+x*x
+
+p2 <- ggplot(data=visium@meta.data, aes(x=nCount_Spatial,y=nCount_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[visium@active.ident]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+      ggtitle("UMIs per cell") +
+      #geom_abline(slope=1, intercept=-15, linetype=3) +
+      labs(x="Illumina",y="Nanopore")
+
+x <- cor.test(visium@meta.data$nCount_Spatial, visium@meta.data$nCount_ISOG, method="pearson")$estimate
+x*x
+
+tiff("figures/scatterplot.hip78.tif", units="in", width=4, height=8, res=300)
+plot_grid(p1, p2, ncol=1)
+dev.off()
+
+
+plot1 <- ggplot(data=visium@meta.data, aes(nFeature_Spatial)) + 
+                geom_histogram(breaks=seq(0, 8000, by = 100),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="Illumina nFeature_Spatial") + 
+                labs(x="nFeatures", y="Cells")
+
+plot2 <- ggplot(data=visium@meta.data, aes(nFeature_ISOG)) + 
+                geom_histogram(breaks=seq(0, 8000, by = 100),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="Nanopore nFeature_ISOG") + 
+                labs(x="nFeatures", y="Cells")
+
+plot_grid(plot1, plot2)
+
+#dev.off()
+
+```
+
+## Correlation Illumina / Nanopore (r)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+common.cells <- rownames(visium@meta.data)
+common.genes <- intersect(rownames(visium@assays$Spatial@data), rownames(visium@assays$ISOG@data))
+common.genes.nomt <- common.genes[grep("mt-", common.genes, invert = TRUE)]
+common.genes.nomtrp <- common.genes.nomt[grep("Rp[ls]", common.genes.nomt, invert = TRUE)]
+length(common.genes.nomtrp)
+
+df <- data.frame()
+for (i in (1:length(common.cells))){
+  c <- intersect(names(which(visium@assays$Spatial@data[common.genes.nomtrp,common.cells[i]]>0)), names(which(visium@assays$ISOG@data[common.genes.nomtrp,common.cells[i]] > 0)))
+  #print(paste(i,common.cells[i],length(c),sep=","))
+  t <- data.frame(visium@assays$Spatial@data[c,common.cells[i]], visium@assays$ISOG@data[c,common.cells[i]])
+  colnames(t) <- c("illu","nano")
+  
+  if(length(c)>100){
+    df <- rbind(df, data.frame("Illu/ONT same cell",cor.test(t$illu, t$nano)$estimate))
+  }
+}
+colnames(df) <- c("type","cor")
+rownames(df) <- c()
+median(df$cor, na.rm=TRUE)
+
+dfhip8.1 <- df
+
+df2 <- data.frame()
+for (i in (1:length(common.cells))){
+  #print (i)
+  random <- sample(1:length(common.cells), 2, replace=T)
+  
+  for (j in (1:length(random))){
+    if(visium@meta.data$ClusterName[i] != visium@meta.data$ClusterName[random[j]]){
+      c <- intersect(names(which(visium@assays$Spatial@data[common.genes.nomtrp,common.cells[random[j]]]>0)), names(which(visium@assays$ISOG@data[common.genes.nomtrp,common.cells[i]] > 0)))
+      t <- data.frame(visium@assays$Spatial@data[c,common.cells[random[j]]], visium@assays$ISOG@data[c,common.cells[i]])
+      colnames(t) <- c("illu","nano")
+      #print(paste(i,common.cells[i],length(c),sep=","))
+      if(length(c)>100){
+        df2 <- rbind(df2, data.frame("Illu/ONT different cell",cor.test(t$illu, t$nano)$estimate))
+      }
+    }
+  }
+}
+colnames(df2) <- c("type","cor")
+rownames(df2) <- c()
+median(df2$cor, na.rm=TRUE)
+
+dfhip8.2 <- df2
+
+```
+Nanopore/Illumina same cell
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+median(df$cor)
+```
+Nanopore/Illumina different cell
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+median(df2$cor)
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=6, fig.width=12}
+
+whole <- rbind(df,df2)
+#pdf("figures/fig.2c.pdf", width=10, height=8, useDingbats=FALSE)
+ggplot(whole, aes(x=type, y=cor, fill=type)) +
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle("Transcriptomics correlation") +
+  theme_classic()
+#dev.off()
+
+```
+
+# CBS2
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium <- readRDS("./output/CBS2.nanopore.rds")
+col=ggplotColours(n = length(unique(visium@active.ident)))
+
+median(visium@meta.data$nCount_Spatial)
+median(visium@meta.data$nCount_ISOG)
+median(visium@meta.data$nCount_ISO)
+
+median(visium@meta.data$nFeature_Spatial)
+median(visium@meta.data$nFeature_ISOG)
+median(visium@meta.data$nFeature_ISO)
+
+```
+
+## Percentage Illumina UMIs / Features seen in Nanopore data
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium@meta.data$nCount_profiled <- visium@meta.data$nCount_ISOG*100/visium@meta.data$nCount_Spatial
+mean(visium@meta.data$nCount_profiled)
+visium@meta.data$nFeature_profiled <- visium@meta.data$nFeature_ISOG*100/visium@meta.data$nFeature_Spatial
+mean(visium@meta.data$nFeature_profiled)
+
+```
+
+## Correlation illumina/Nanopore (r²)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+#pdf("Correlation.plots.pdf", width=10, height=8, useDingbats=FALSE)
+
+p1 <- ggplot(data=visium@meta.data, aes(x=nFeature_Spatial,y=nFeature_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[visium@active.ident]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+      ggtitle("Features per cell") +
+      #geom_abline(slope=1, intercept=-15, linetype=3) +
+      labs(x="Illumina",y="Nanopore")
+
+x <- cor.test(visium@meta.data$nFeature_Spatial, visium@meta.data$nFeature_ISOG, method="pearson")$estimate
+x*x
+
+p2 <- ggplot(data=visium@meta.data, aes(x=nCount_Spatial,y=nCount_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[visium@active.ident]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+      ggtitle("UMIs per cell") +
+      #geom_abline(slope=1, intercept=-15, linetype=3) +
+      labs(x="Illumina",y="Nanopore")
+
+x <- cor.test(visium@meta.data$nCount_Spatial, visium@meta.data$nCount_ISOG, method="pearson")$estimate
+x*x
+
+tiff("figures/scatterplot.hip79.tif", units="in", width=4, height=8, res=300)
+plot_grid(p1, p2, ncol=1)
+dev.off()
+
+
+plot1 <- ggplot(data=visium@meta.data, aes(nFeature_Spatial)) + 
+                geom_histogram(breaks=seq(0, 8000, by = 100),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="Illumina nFeature_Spatial") + 
+                labs(x="nFeatures", y="Cells")
+
+plot2 <- ggplot(data=visium@meta.data, aes(nFeature_ISOG)) + 
+                geom_histogram(breaks=seq(0, 8000, by = 100),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="Nanopore nFeature_ISOG") + 
+                labs(x="nFeatures", y="Cells")
+
+plot_grid(plot1, plot2)
+
+#dev.off()
+
+```
+
+## Correlation Illumina / Nanopore (r)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+common.cells <- rownames(visium@meta.data)
+common.genes <- intersect(rownames(visium@assays$Spatial@data), rownames(visium@assays$ISOG@data))
+common.genes.nomt <- common.genes[grep("mt-", common.genes, invert = TRUE)]
+common.genes.nomtrp <- common.genes.nomt[grep("Rp[ls]", common.genes.nomt, invert = TRUE)]
+length(common.genes.nomtrp)
+
+df <- data.frame()
+for (i in (1:length(common.cells))){
+  c <- intersect(names(which(visium@assays$Spatial@data[common.genes.nomtrp,common.cells[i]]>0)), names(which(visium@assays$ISOG@data[common.genes.nomtrp,common.cells[i]] > 0)))
+  #print(paste(i,common.cells[i],length(c),sep=","))
+  t <- data.frame(visium@assays$Spatial@data[c,common.cells[i]], visium@assays$ISOG@data[c,common.cells[i]])
+  colnames(t) <- c("illu","nano")
+  
+  if(length(c)>100){
+    df <- rbind(df, data.frame("Illu/ONT same cell",cor.test(t$illu, t$nano)$estimate))
+  }
+}
+colnames(df) <- c("type","cor")
+rownames(df) <- c()
+median(df$cor, na.rm=TRUE)
+
+dfhip9.1 <- df
+
+df2 <- data.frame()
+for (i in (1:length(common.cells))){
+  #print (i)
+  random <- sample(1:length(common.cells), 2, replace=T)
+  
+  for (j in (1:length(random))){
+    if(visium@meta.data$ClusterName[i] != visium@meta.data$ClusterName[random[j]]){
+      c <- intersect(names(which(visium@assays$Spatial@data[common.genes.nomtrp,common.cells[random[j]]]>0)), names(which(visium@assays$ISOG@data[common.genes.nomtrp,common.cells[i]] > 0)))
+      t <- data.frame(visium@assays$Spatial@data[c,common.cells[random[j]]], visium@assays$ISOG@data[c,common.cells[i]])
+      colnames(t) <- c("illu","nano")
+      #print(paste(i,common.cells[i],length(c),sep=","))
+      if(length(c)>100){
+        df2 <- rbind(df2, data.frame("Illu/ONT different cell",cor.test(t$illu, t$nano)$estimate))
+      }
+    }
+  }
+}
+colnames(df2) <- c("type","cor")
+rownames(df2) <- c()
+median(df2$cor, na.rm=TRUE)
+
+dfhip9.2 <- df2
+
+```
+Nanopore/Illumina same cell
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+median(df$cor)
+```
+Nanopore/Illumina different cell
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+median(df2$cor)
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=6, fig.width=12}
+
+whole <- rbind(df,df2)
+#pdf("figures/fig.2c.pdf", width=10, height=8, useDingbats=FALSE)
+ggplot(whole, aes(x=type, y=cor, fill=type)) +
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle("Transcriptomics correlation") +
+  theme_classic()
+#dev.off()
+
+```
+
+# general boxplot
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=6, fig.width=12}
+
+dfhip9.1$type <- "dfhip9.same"
+dfhip9.2$type <- "dfhip9.diff"
+dfhip8.1$type <- "dfhip8.same"
+dfhip8.2$type <- "dfhip8.diff"
+dfmob.1$type <- "dfmob.same"
+dfmob.2$type <- "dfmob.diff"
+
+whole <- rbind(dfhip9.1,dfhip8.1,dfmob.1,dfhip9.2,dfhip8.2,dfmob.2)
+#pdf("figures/fig.2c.pdf", width=10, height=8, useDingbats=FALSE)
+ggplot(whole, aes(x=type, y=cor, fill=type)) +
+  geom_boxplot(outlier.shape = NA)+
+  ggtitle("Transcriptomics correlation") +
+  theme_classic()
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```

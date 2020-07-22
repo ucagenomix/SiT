@@ -1,0 +1,927 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/")
+source("00.import.R")
+
+MOB <- readRDS("./output/MOB.nanopore.rds")
+CBS1 <- readRDS("./output/CBS1.nanopore.rds")
+CBS2 <- readRDS("./output/CBS2.nanopore.rds")
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+#extract Subiculum from CA1/CA2 would be possible
+#i <- subset(CBS2, ident=c("CA1/CA2"))
+#SpatialDimPlot(i)
+#DefaultAssay(i) <- "Spatial"
+#i <- FindVariableFeatures(i, selection.method = "vst", nfeatures = 3000)
+#i <- ScaleData(i, verbose = FALSE)
+#i <- RunPCA(i, npcs = 30, verbose = FALSE)
+#i <- FindNeighbors(i, dims = 1:15)
+#i <- RunUMAP(i, dims = 1:15)
+#i <- FindClusters(i)
+#SpatialDimPlot(i)
+
+#DefaultAssay(object = CBS2) <- "SCT"
+#CBS2 <- FindSpatiallyVariableFeatures(CBS2, assay = "SCT", features = VariableFeatures(CBS2)[1:1000], selection.method = "markvariogram")
+#top.features <- head(SpatiallyVariableFeatures(CBS2, selection.method = "markvariogram"), 60)
+#DotPlot(CBS2, features=top.features) + RotatedAxis()
+#SpatialFeaturePlot(CBS2, features = top.features, ncol = 3, alpha = c(0.1, 1))
+
+```
+
+# multi-isoform genes ratio (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+#CBS2 <- subset(CBS2, subset = nFeature_ISO>1)
+#mm <- numeric()
+#for(i in 1:2500){
+#  t <- sapply(strsplit(rownames(CBS2@assays$ISO@counts[CBS2@assays$ISO@counts[,i]>0,]), "\\.\\."), `[`, 1)
+#  multi <- length(t) - length(unique(t))
+#  ratio <- 100*multi/length(t)
+#  print(paste(i,length(t),multi,ratio))
+#  mm <- c(mm,ratio)
+#}
+
+#names(mm) <- colnames(CBS2@assays$ISO@counts)
+#CBS2[['multi']] <- mm
+#CBS2[['multinorm']] <- CBS2[['multi']]/CBS2[['nCount_Spatial']]
+#SpatialFeaturePlot(CBS2, features=c("multi","multinorm","nCount_Spatial"), max.cutoff=c(10,0.0015,30000))
+#ggplot(data=CBS2@meta.data, aes(x=nCount_Spatial, y=multi)) +
+#    geom_point(alpha=0.5, shape=21, color="black") +
+#    theme_minimal() +
+#    theme(legend.position="bottom") +
+#    ylab("multi") +
+#    xlab("nCount") +
+#    theme(legend.position = "none")
+
+```
+
+# Supplementary figure Sept5 (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+tiff("figures/dotplot.sept5.spatial.tif", units="in", width=6, height=6, res=300)
+DefaultAssay(CBS2) <- "Spatial"
+SpatialFeaturePlot(CBS2, features=c("Sept5","Gp1bb"),max.cutoff = 3)
+dev.off()
+tiff("figures/dotplot.sept5.isog.tif", units="in", width=6, height=6, res=300)
+DefaultAssay(CBS2) <- "ISOG"
+SpatialFeaturePlot(CBS2, features=c("Sept5","Gp1bb"),max.cutoff = 3)
+dev.off()
+
+```
+
+# Supplementary statistics (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+#library(fmsb)
+# Create data: note in High school for several students
+#set.seed(99)
+#data <- as.data.frame(matrix( sample( 0:20 , 15 , replace=F) , ncol=5))
+#colnames(data) <- c("math" , "english" , "biology" , "music" , "R-coding" )
+#rownames(data) <- paste("mister" , letters[1:3] , sep="-")
+ 
+# To use the fmsb package, I have to add 2 lines to the dataframe: the max and min of each variable to show on the plot!
+#data <- rbind(rep(20,5) , rep(0,5) , data)
+ 
+# plot with default options:
+#radarchart(data)
+#x <- read.table("stats.txt", sep="\t")
+
+#rownames(x) <- c("1","2","CBS2.1","CBS2.2","CBS2.3","CBS2.4","CBS2.5","CBS2.6","CBS2.7","CBS1.1","CBS1.2","MOB.1","MOB.2")
+#colnames(x) <- c("PolyA found","cellBC found","UMI found","UMI genes found")
+
+#radarchart(x)
+
+#colors_border=c( "#2af598", "#22e4ac",  "#1bd7bb", "#14c9cb" , "#0fbed8", "#08b3e5", "#0F496E", "#BC438A", "#F3D8E8" , "#cb5323", "#591702" )
+#colors_in=c( "#2af598", "#22e4ac",  "#1bd7bb", "#14c9cb" , "#0fbed8", "#08b3e5", "#0F496E", "#BC438A", "#F3D8E8" , "#cb5323", "#591702" )
+
+#radarchart( x  , axistype=1 , 
+    #custom polygon
+#    pcol=colors_border , plwd=4 , plty=1,
+    #custom the grid
+#    cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,100,25), cglwd=0.8,
+    #custom labels
+#    vlcex=0.8 
+#    )
+
+```
+
+# Supplementary fig.3
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+DefaultAssay(object = CBS2) <- "ISO"
+general <- c('Snap25','Cnih2','Gnas','Bin1','Caly','Dtnbp1','Aldoa')
+lst <- c()
+for (i in (1:length(general))){
+  x <- rownames(CBS2@assays$ISO@counts)[grep(paste("^",general[i],"\\.\\.",sep=""), rownames(CBS2@assays$ISO@counts))]
+  lst <- c(lst,x)
+}
+#iso.switching = read.delim("./output/CBS2.isoswitch.top.csv", sep=",", stringsAsFactors = F)
+#iso.switching$key <- paste(iso.switching$geneId,iso.switching$transcriptId, sep="..")
+#lst <- lst[lst %in% iso.switching$key == TRUE]
+
+tiff("figures/dotplot.hip.iso.tif", units="in", width=16, height=8, res=300)
+DefaultAssay(object = CBS2) <- "ISO"
+DotPlot(object = CBS2, features = lst, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+dev.off()
+
+tiff("figures/dotplot.hip.gene.tif", units="in", width=24, height=6, res=300)
+DefaultAssay(object = CBS2) <- "SCT"
+print(DotPlot(object = CBS2, features = general, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+dev.off()
+
+DefaultAssay(object = CBS2) <- "ISOG"
+tiff("figures/dotplot.hip.isog.tif", units="in", width=16, height=6, res=300)
+print(DotPlot(object = CBS2, features = general, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "purple")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+dev.off()
+
+# mob
+MOB <- readRDS("./output/MOB.nanopore.rds")
+DefaultAssay(object = MOB) <- "ISO"
+general <- c('Myl6','Plp1')
+lst <- c()
+for (i in (1:length(general))){
+  x <- rownames(MOB@assays$ISO@counts)[grep(paste("^",general[i],"\\.\\.",sep=""), rownames(MOB@assays$ISO@counts))]
+  lst <- c(lst,x)
+}
+iso.switching = read.delim("./output/MOB.isoswitch.top.csv", sep=",", stringsAsFactors = F)
+iso.switching$key <- paste(iso.switching$geneId,iso.switching$transcriptId, sep="..")
+lst <- lst[lst %in% iso.switching$key == TRUE]
+
+tiff("figures/dotplot.mob.iso.tif", units="in", width=6, height=6, res=300)
+DefaultAssay(object = MOB) <- "ISO"
+DotPlot(object = MOB, features = lst, scale=TRUE, scale.max = 100, scale.min = 0) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+dev.off()
+
+tiff("figures/dotplot.mob.gene.tif", units="in", width=6, height=4, res=300)
+DefaultAssay(object = MOB) <- "SCT"
+print(DotPlot(object = MOB, features = general, scale.max = 100, scale.min = 0, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+dev.off()
+
+DefaultAssay(object = MOB) <- "ISOG"
+tiff("figures/dotplot.mob.isog.tif", units="in", width=6, height=4, res=300)
+print(DotPlot(object = MOB, features = general, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2,cols = c("lightgrey", "purple")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+dev.off()
+
+```
+
+# Main fig.2b
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+#pdf("figures/fig2a.pdf", width=36, height=8, useDingbats=FALSE)
+#SpatialFeaturePlot(CBS2, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=2, alpha = c(1, 1), max.cutoff = c(300,80,0.6))
+#dev.off()
+
+tiff("figures/fig2d.tif", units="in", width=20, height=8, res=300)
+SpatialFeaturePlot(CBS2, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+dev.off()
+
+DefaultAssay(object = CBS2) <- "SCT"
+SpatialFeaturePlot(CBS2, features = c("Mbp"), pt.size.factor=1.6, alpha = c(1, 1))
+
+```
+
+# Main fig.2c
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+col=ggplotColours(n = length(unique(CBS2@active.ident)))
+
+ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+
+tiff("figures/fig.2c.tif", units="in", width=8, height=6, res=300)
+ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+dev.off()
+
+ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_detected, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,50), breaks=seq(0,50,10), expand = c(0, 0))
+
+```
+
+# Main fig.2c-2
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+avg <- AverageExpression(object = CBS2, return.seurat = TRUE, assay="SCT")
+pheatmap(avg@assays$SCT@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+#pdf("figures/fig2c.pdf", width=12, height=6, useDingbats=FALSE)
+#pheatmap(avg@assays$SCT@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+#dev.off()
+
+tiff("figures/fig2c-2.tif", units="in", width=8, height=6, res=300)
+pheatmap(avg@assays$SCT@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+dev.off()
+
+```
+
+# Main fig.2x (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+CBS2[['SCTAdar']] <- CBS2@assays$SCT@data["Adar",]
+CBS2[['SCTAdarb1']] <- CBS2@assays$SCT@data["Adarb1",]
+CBS2[['SCTAdarb2']] <- CBS2@assays$SCT@data["Adarb2",]
+
+p1 <- ggplot(data=CBS2@meta.data, aes(x=SCTAdar,y=AtoI_ratio, group=SCTAdar))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.4))
+
+p2 <- ggplot(data=CBS2@meta.data, aes(x=SCTAdarb1,y=AtoI_ratio, group=SCTAdarb1))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.4))
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=SCTAdarb2,y=AtoI_ratio, group=SCTAdarb2))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1) +
+  scale_y_continuous(limits=c(0,0.4))
+
+plot_grid(p1,p2,p3,ncol=3)
+
+CBS2[['UMIAdar']] <- CBS2@assays$Spatial@counts["Adar",]
+CBS2[['UMIAdarb1']] <- CBS2@assays$Spatial@counts["Adarb1",]
+CBS2[['UMIAdarb2']] <- CBS2@assays$Spatial@counts["Adarb2",]
+
+p1 <- ggplot(data=CBS2@meta.data, aes(x=UMIAdar,y=AtoI_ratio, group=UMIAdar))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.35))
+
+p2 <- ggplot(data=CBS2@meta.data, aes(x=UMIAdarb1,y=AtoI_ratio, group=UMIAdarb1))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.35))
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=UMIAdarb2,y=AtoI_ratio, group=UMIAdarb2))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1) +
+  scale_y_continuous(limits=c(0,0.35))
+
+plot_grid(p1,p2,p3,ncol=3)
+
+#tiff("figures/fig2d.tif", units="in", width=12, height=6, res=300)
+#plot_grid(p1,p2,p3,ncol=3)
+#dev.off()
+
+```
+
+# Main fig.2x - per region (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+  p1 <- CBS2@meta.data %>% 
+    ggplot(aes(x=factor(UMIAdar),y=AtoI_ratio, fill=ClusterName)) +
+    geom_boxplot() +
+    scale_y_continuous(limits=c(0,0.4)) +
+    geom_jitter(width=0.1,alpha=0.2) +
+    xlab("Adar")+ 
+    facet_wrap(~ClusterName,ncol = 4) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  p2 <- CBS2@meta.data %>% 
+    ggplot(aes(x=factor(UMIAdarb1),y=AtoI_ratio, fill=ClusterName)) +
+    geom_boxplot() +
+    scale_y_continuous(limits=c(0,0.4)) +
+    geom_jitter(width=0.1,alpha=0.2) +
+    xlab("Adarb1")+ 
+    facet_wrap(~ClusterName,ncol = 4) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  p3 <- CBS2@meta.data %>% 
+    ggplot(aes(x=factor(UMIAdarb2),y=AtoI_ratio, fill=ClusterName)) +
+    geom_boxplot() +
+    scale_y_continuous(limits=c(0,0.4)) +
+    geom_jitter(width=0.1,alpha=0.2) +
+    xlab("Adarb2")+ 
+    facet_wrap(~ClusterName,ncol = 4) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  #tiff("figures/fig2d.tif", units="in", width=20, height=6, res=300)
+  #plot_grid(p1,p2,p3,ncol=3)
+  #dev.off()
+  
+```
+
+# Supplementary single cell deconvolution per region (hip79, not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+avg <- AverageExpression(object = CBS2, return.seurat = TRUE, assay="predClusterName")
+avg <- ScaleData(avg, assay="predClusterName")
+
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Midbrain"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Hippocampus"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Isocortex-1"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Isocortex-2"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Entorhinal area"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Olfactory area"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Fiber tracts"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Ca1/Ca2"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Optic nerve"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Hypothalamus"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Thalamus"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"DG-sg"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"RSPv2"], decreasing=TRUE),5))
+kable(head(sort(avg@assays$predClusterName@scale.data[,"Ca3sp"], decreasing=TRUE),5))
+
+zeisel <- readRDS("./output/zeisel.rds")
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[1]], decreasing=TRUE),5))))
+p1 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[1]))  + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[2]], decreasing=TRUE),5))))
+p2 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[2])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[3]], decreasing=TRUE),5))))
+p3 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[3])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[4]], decreasing=TRUE),5))))
+p4 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[4])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[5]], decreasing=TRUE),5))))
+p5 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[5])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[6]], decreasing=TRUE),5))))
+p6 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[6])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[7]], decreasing=TRUE),5))))
+p7 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[7])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[8]], decreasing=TRUE),5))))
+p8 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[8])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[9]], decreasing=TRUE),6))))
+p9 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[9])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[10]], decreasing=TRUE),5))))
+p10 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[10])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[11]], decreasing=TRUE),5))))
+p11 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[11])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[12]], decreasing=TRUE),5))))
+p12 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[12])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[13]], decreasing=TRUE),5))))
+p12 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[13])) + NoLegend()
+sub <- subset(zeisel, subset = ClusterName %in% c(names(head(sort(avg@assays$predClusterName@scale.data[,clusters[14]], decreasing=TRUE),5))))
+p12 <- DotPlot(sub, features=c("Adar","Adarb1","Adarb2"), group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[14])) + NoLegend()
+
+plot_grid(p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,p11,p12,p13,p14,ncol=4)
+
+```
+
+# Main fig.1e (CBS2, Snap25 isoforms)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+x <- unique(rownames(CBS2@assays$ISO@data)[grep(paste("^Snap25..",sep=""), rownames(CBS2@assays$ISO@data))])
+DefaultAssay(CBS2) <- "ISO"
+SpatialFeaturePlot(CBS2, features = x, pt.size.factor=1.6, alpha = c(1, 1))
+
+```
+
+# Main fig.1b (mob, Plp1 isoforms)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+x <- unique(rownames(MOB@assays$ISO@data)[grep(paste("^Plp1..",sep=""), rownames(MOB@assays$ISO@data))])
+DefaultAssay(MOB) <- "ISO"
+SpatialFeaturePlot(MOB, features = x, pt.size.factor=1.6, alpha = c(1, 1))
+
+```
+
+# Supplementary fig.8 single cell deconvolution per region (mob, Plp1 story)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+MOB <- readRDS("./output/MOB.nanopore.rds")
+clusters <- c("Granule Cell Layer (GCL+RMS)","Mitral Cell Layer (MCL)","Outer plexiform Layer (EPL)","Glomerular Layer (GL)","Olfactory Nerve Layer (ONL)")
+col=ggplotColours(n = length(unique(MOB@active.ident)))
+
+x <- unique(rownames(MOB@assays$ISO@data)[grep(paste("^Plp1..",sep=""), rownames(MOB@assays$ISO@data))])
+DefaultAssay(MOB) <- "ISO"
+SpatialFeaturePlot(MOB, features = x, pt.size.factor=1.6, alpha = c(1, 1))
+
+#DefaultAssay(MOB) <- "predictions"
+#p1 = DotPlot(MOB, features = sort(rownames(MOB@assays$predictions@data))) + RotatedAxis()
+#p1 + theme(axis.text.x = element_text(size = 6)) + xlab("Cluster")
+#p1
+
+avg <- AverageExpression(object = MOB, return.seurat = TRUE, assay="predictions")
+avg <- ScaleData(avg, assay="predictions")
+
+kable(head(sort(avg@assays$predictions@scale.data[,"Granule Cell Layer (GCL+RMS)"], decreasing=TRUE),10))
+kable(head(sort(avg@assays$predictions@scale.data[,"Olfactory Nerve Layer (ONL)"], decreasing=TRUE),10))
+
+tepe <- readRDS("./output/tepe.rds")
+p1 <- DimPlot(tepe, group.by="ClusterName", label=TRUE)
+p2 <- FeaturePlot(tepe, "Plp1")
+
+GCL.clust <- c("N4","N10","N8","N9","N7","N11","N1","OPC")
+ONL.clust <- c("Mural1","Mes2","OEC5","OEC2","OEC4","Mes1","OEC1","OEC3")
+
+sub <- subset(tepe, subset = ClusterName %in% c(names(head(sort(avg@assays$predictions@scale.data[,clusters[1]], decreasing=TRUE),10))))
+#DotPlot(sub, features=sf, group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[1]))  + NoLegend()
+p3 <- DotPlot(sub, features="Plp1", group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[1]))
+
+sub <- subset(tepe, subset = ClusterName %in% c(names(head(sort(avg@assays$predictions@scale.data[,clusters[5]], decreasing=TRUE),10))))
+#DotPlot(sub, features=sf, group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[1]))  + NoLegend()
+p4 <- DotPlot(sub, features="Plp1", group.by = "ClusterName", scale.max=100, col.min = -1.5, col.max = 1.5, cols = c("lightgrey", col[1]))
+
+plot_grid(p1,p2,p3,p3,ncol=4)
+
+tiff("figures/sup.fig8a.tif", units="in", width=8, height=6, res=300)
+DimPlot(tepe, group.by="ClusterName", label=TRUE, label.size = 3)
+dev.off()
+
+tiff("figures/sup.fig8b.tif", units="in", width=4, height=4, res=300)
+FeaturePlot(tepe, "Plp1")
+dev.off()
+
+tiff("figures/sup.fig8cd.tif", units="in", width=10, height=4, res=300)
+plot_grid(p3,p4,ncol=2)
+dev.off()
+
+```
+
+# Supplementary fig.5 - spatial markers
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+DefaultAssay(CBS2) <- "SCT"
+CBS2 <- subset(CBS2, subset = nFeature_ISO>1)
+SpatialDimPlot(CBS2, pt.size.factor =1.6, label=TRUE)
+
+markers <- read.delim("./output/CBS2.markers.csv", sep=",", stringsAsFactors = F)
+markers <- markers[markers$pct.2<0.5,]
+top <- markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+DotPlot(object = CBS2, features = unique(top$gene), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
+SpatialFeaturePlot(object = CBS2, features = c("C1ql2","Myo5b","Slc6a3","Zic1","Fibcd1","Nrep","Mag","Hpcal1","Camk2n1","Myl4","Gfap","Mbp"), pt.size.factor=1.6, alpha = c(1, 1))
+
+tiff("figures/sup.markers.CBS2.tif", units="in", width=14, height=12, res=300)
+SpatialFeaturePlot(object = CBS2, features = c("C1ql2","Myo5b","Slc6a3","Zic1","Fibcd1","Nrep","Mag","Hpcal1","Camk2n1","Myl4","Gfap","Calb2"), pt.size.factor=1.6, alpha = c(1, 1))
+dev.off()
+
+tiff("figures/sup.markers.dotplot.CBS2.tif", units="in", width=10, height=6, res=300)
+DotPlot(object = CBS2, features = rev(c("C1ql2","Myo5b","Slc6a3","Zic1","Fibcd1","Nrep","Mag","Hpcal1","Camk2n1","Myl4","Gfap","Mbp")), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
+dev.off()
+
+DefaultAssay(MOB) <- "SCT"
+tiff("figures/mob.tif", units="in", width=6, height=6, res=300)
+SpatialDimPlot(MOB, pt.size.factor =2)
+dev.off()
+
+DotPlot(object = MOB, features = c("Nrgn","Tbx21","Bc1","Eomes","Nnat"), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red"))
+
+tiff("figures/sup.markers.mob.tif", units="in", width=6, height=6, res=300)
+SpatialFeaturePlot(MOB, features = c("Nrgn","Tbx21","Bc1","Eomes","Nnat"), slot="data", pt.size.factor=1.6, alpha = c(1, 1))
+dev.off()
+
+markers <- read.delim("./output/MOB.markers.csv", sep=",", stringsAsFactors = F)
+markers <- markers[markers$pct.2<0.5,]
+top <- markers %>% group_by(cluster) %>% top_n(10, avg_logFC)
+DotPlot(object = MOB, features = unique(top$gene), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
+
+tiff("figures/sup.markers.mob.tif", units="in", width=6, height=6, res=300)
+SpatialFeaturePlot(object = MOB, features = c("Gsn","Trh","Cnot3","Nrgn","Spp1"), pt.size.factor=2,  max.cutoff = 2, alpha = c(1, 1))
+dev.off()
+
+tiff("figures/sup.markers.dotplot.mob.tif", units="in", width=10, height=6, res=300)
+DotPlot(object = MOB, features = rev(c("Gsn","Trh","Cnot3","Nrgn","Spp1")), scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + RotatedAxis()
+dev.off()
+
+```
+
+# Editing statistics
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
+
+length(rownames(CBS2@assays$AtoI@counts))
+table(Matrix::rowSums(CBS2@assays$AtoI@data)>0)
+
+sum(CBS2[['AtoI_total']], na.rm=TRUE)
+sum(CBS2[['AtoI_G']], na.rm=TRUE)
+sum(CBS2[['AtoI_A']], na.rm=TRUE)
+100*sum(CBS2[['AtoI_G']], na.rm=TRUE)/sum(CBS2[['AtoI_total']], na.rm=TRUE)
+
+```
+
+# Main fig.2x - 75 editing sites heatmap (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
+
+all = read.delim("./nanopore/CBS2.snp100838.RN3.QV6_snpmatrix.csv", sep=",", stringsAsFactors = F)
+data = all[,4:ncol(all)]
+dim(data)
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) = paste(all$geneId, all$transcriptId, sep=":")
+vect <- colnames(CBS2@assays$Spatial)
+#idx <- grep("intergenic", rownames(data), invert = TRUE)
+#data <- data[idx,vect]
+#idx <- grep("Rik", rownames(data), invert = TRUE)
+data <- data[,vect]
+idx1 <- grep("\\.\\.A", rownames(data))
+idx2 <- grep("\\.\\.G", rownames(data))
+data <- data[c(idx1,idx2),]
+dim(data)
+
+x <- unique(sapply(strsplit(rownames(data), "\\.\\."), `[`, 1))
+countA <- data[grep("\\.\\.A",rownames(data)),]
+colnames(countA) <- colnames(data)
+rownames(countA) <- x
+countG <- data[grep("\\.\\.G",rownames(data)),]
+colnames(countG) <- colnames(data)
+rownames(countG) <- x
+
+countG <- countG[rowSums(countG)>49,]
+countA <- countA[rownames(countG),]
+dim(countA)
+dim(countG)
+
+CBS2[["AtoIhigh"]] <- CreateAssayObject(counts = countA)
+CBS2 <- SetAssayData(CBS2, slot = "data", as.matrix(countG), assay = "AtoIhigh")
+
+agg.A <- data.frame()
+for(i in 1:75){
+  t <- aggregate(CBS2@assays$AtoIhigh@counts[i,], list(CBS2@meta.data$ClusterName), sum)
+  agg.A <- rbind(agg.A,t$x)
+  print(i)
+}
+colnames(agg.A) <- unique(t$Group.1)
+rownames(agg.A) <- rownames(CBS2@assays$AtoIhigh@counts)
+
+agg.G <- data.frame()
+for(i in 1:75){
+  t <- aggregate(CBS2@assays$AtoIhigh@data[i,], list(CBS2@meta.data$ClusterName), sum)
+  agg.G <- rbind(agg.G,t$x)
+  print(i)
+}
+colnames(agg.G) <- unique(t$Group.1)
+rownames(agg.G) <- rownames(CBS2@assays$AtoIhigh@data)
+
+ratio <- agg.G/(agg.A+agg.G)
+ratio[is.na(ratio)] <- 0
+dim(ratio)
+
+pheatmap(as.matrix(ratio), cluster_rows=TRUE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+avg <- AverageExpression(object = CBS2, return.seurat = TRUE, assay="SCT")
+avg[["AtoIhigh"]] <- CreateAssayObject(counts = ratio)
+VlnPlot(avg,features="Calm1:12:100207186", slot="data",assay="AtoIhigh")
+VlnPlot(avg,features="Scn1b:7:31116973", slot="data",assay="AtoIhigh")
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Gria2", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Blcap", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Grik5", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Rpa1", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+#write.table(agg.A, file="CBS2.A.csv", sep=",")
+#write.table(agg.G, file="CBS2.G.csv", sep=",")
+#write.table(ratio, file="CBS2.R.csv", sep=",")
+
+```
+
+# Main fig.2d - Calm1 editing
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
+
+gene <- "Calm1"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene,":"), rownames(CBS2@assays$AtoI@counts))])
+DefaultAssay(CBS2) <- "AtoI"
+p1 <- SpatialFeaturePlot(CBS2, features = x, slot="counts", pt.size.factor=1.6, alpha = c(1, 1)) + labs(title = "Non edited molecules")
+p2 <- SpatialFeaturePlot(CBS2, features = x, slot="data", pt.size.factor=1.6, alpha = c(1, 1), max.cutoff=c(7)) + labs(title = "Edited molecules")
+p3 <- SpatialFeaturePlot(CBS2, features = x, slot="scale.data", pt.size.factor=1.6, alpha = c(1, 1), max.cutoff=c(0.5)) + labs(title = "Editing ratio")
+
+CBS2[['editing_ratio']] <- CBS2@assays$AtoI@scale.data[x,]
+p4 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=editing_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0)) +
+  coord_flip() + labs(title = "\n\nEditing ratio per region\n")
+
+plot_grid(p1,p2,p3,p4, ncol=4)
+
+# %age editing per region
+gene <- "Calm1"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene,":"), rownames(CBS2@assays$AtoI@counts))])
+a <- aggregate(CBS2@assays$AtoI@counts[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@assays$AtoI@data[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all
+
+```
+
+# Scn1b editing
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
+
+gene <- "Scn1b"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene,":"), rownames(CBS2@assays$AtoI@counts))])
+DefaultAssay(CBS2) <- "AtoI"
+p1 <- SpatialFeaturePlot(CBS2, features = x, slot="counts", pt.size.factor=2, alpha = c(1, 1)) + labs(title = "Non edited molecules")
+p2 <- SpatialFeaturePlot(CBS2, features = x, slot="data", pt.size.factor=2, alpha = c(1, 1)) + labs(title = "Edited molecules")
+p3 <- SpatialFeaturePlot(CBS2, features = x, slot="scale.data", pt.size.factor=2, alpha = c(1, 1)) + labs(title = "Editing ratio")
+
+RidgePlot(CBS2,x,slot="scale.data")
+VlnPlot(CBS2,x,slot="scale.data")
+
+CBS2[['editing_ratio']] <- CBS2@assays$AtoI@scale.data[x,]
+p4 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=editing_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0)) +
+  coord_flip() + labs(title = "\n\nEditing ratio per region\n")
+
+plot_grid(p1,p2,p3,p4, ncol=4)
+
+```
+
+# Gnas editing
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
+
+gene <- "Gnas"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene,":"), rownames(CBS2@assays$AtoI@counts))])
+DefaultAssay(CBS2) <- "AtoI"
+p1 <- SpatialFeaturePlot(CBS2, features = x, slot="counts", pt.size.factor=2, alpha = c(1, 1)) + labs(title = "Non edited molecules")
+p2 <- SpatialFeaturePlot(CBS2, features = x, slot="data", pt.size.factor=2, alpha = c(1, 1)) + labs(title = "Edited molecules")
+p3 <- SpatialFeaturePlot(CBS2, features = x, slot="scale.data", pt.size.factor=2, alpha = c(1, 1)) + labs(title = "Editing ratio")
+
+CBS2[['editing_ratio']] <- CBS2@assays$AtoI@scale.data[x,]
+p4 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=editing_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0)) +
+  coord_flip() + labs(title = "\n\nEditing ratio per region\n")
+
+plot_grid(p1,p2,p3,p4, ncol=4)
+
+```
+
+# Distinct number of editing sites detected as edited by at least one UMI (I)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+p1 <- SpatialFeaturePlot(CBS2, features = "AtoI_detected", pt.size.factor=2, alpha = c(1, 1))
+p2 <- VlnPlot(CBS2,"AtoI_detected")
+p3 <- RidgePlot(CBS2, features = "AtoI_detected")
+
+plot_grid(p1,p2,p3,ncol=3)
+
+p1 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_A, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_A")
+
+p2 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_G, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_G")
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_ratio")
+
+p4 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_detected, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_detected")
+
+plot_grid(p1,p2,p3,p4,ncol=4)
+
+```
+
+# export tables
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+CBS2 <- readRDS("./output/CBS2.nanopore.rds")
+df <- data.frame()
+df <- data.frame(Matrix::rowSums(CBS2@assays$AtoI@counts), Matrix::rowSums(CBS2@assays$AtoI@data))
+colnames(df) <- c("A", "G")
+df$total <- df$A+df$G
+df$ratio <- df$G/df$total
+write.table(df, file="CBS2.AtoI.csv", sep=",")
+
+CBS1 <- readRDS("./output/CBS1.nanopore.rds")
+df <- data.frame()
+df <- data.frame(Matrix::rowSums(CBS1@assays$AtoI@counts), Matrix::rowSums(CBS1@assays$AtoI@data))
+colnames(df) <- c("A", "G")
+df$total <- df$A+df$G
+df$ratio <- df$G/df$total
+write.table(df, file="CBS1.AtoI.csv", sep=",")
+
+MOB <- readRDS("./output/MOB.nanopore.rds")
+df <- data.frame()
+df <- data.frame(Matrix::rowSums(MOB@assays$AtoI@counts), Matrix::rowSums(MOB@assays$AtoI@data))
+colnames(df) <- c("A", "G")
+df$total <- df$A+df$G
+df$ratio <- df$G/df$total
+write.table(df, file="MOB.AtoI.csv", sep=",")
+
+```
+
+# Supplementary fig.13 - Nanopore/Illumina agreement
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+library(viridis)
+
+agreement = read.delim("ressources/agreement.txt", sep="\t", stringsAsFactors = F)
+ggplot(data=agreement, aes(x=RN, y=QV, size=number, fill=agree)) +
+    geom_point(alpha=0.5, shape=21, color="black") + 
+    scale_size(range = c(.1, 36), name="total") +
+    scale_fill_viridis(guide=FALSE, option="A") +
+    theme_minimal() +
+    theme(legend.position="bottom") +
+    ylab("Nanopore base QV") +
+    xlab("Molecule read number (RN)") +
+    theme(legend.position = "none")
+
+tiff("figures/RNagree.tif", units="in", width=6, height=8, res=300)
+agreement = read.delim("ressources/RNAgree.txt", sep="\t", stringsAsFactors = F)
+ggplot(data=agreement, aes(x=RN, y=Agreement)) +
+    geom_line()+
+    geom_point()
+dev.off()
+
+tiff("figures/QVagree.tif", units="in", width=6, height=8, res=300)
+agreement = read.delim("ressources/QVAgree.txt", sep="\t", stringsAsFactors = F)
+ggplot(data=agreement, aes(x=QV, y=Agreement)) +
+    geom_line()+
+  theme_minimal() +
+    geom_point()
+dev.off()
+
+```
+
+# Supplementary fig.9 - hip78/hip79 correlation
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+breaksList = seq(0.6, 1, by = 0.01)
+
+CBS1 <- subset(CBS1, ident=c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG"))
+CBS2 <- subset(CBS2, ident=c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG"))
+
+p1 <- SpatialDimPlot(CBS1)
+p2 <- SpatialDimPlot(CBS2)
+plot_grid(p1,p2)
+
+# Spatial correlation
+avg79 <- AverageExpression(object = CBS2, return.seurat = TRUE, assay="SCT")
+avg78 <- AverageExpression(object = CBS1, return.seurat = TRUE, assay="SCT")
+
+regions <- rownames(avg79@meta.data)
+genes <- intersect(rownames(avg78@assays$SCT@data), rownames(avg79@assays$SCT@data))
+length(genes)
+
+df <- data.frame()
+for (i in (1:length(regions))){
+  
+  df2<- data.frame()
+  for (j in (1:length(regions))){
+    t <- data.frame(avg78@assays$SCT@data[genes,regions[i]], avg79@assays$SCT@data[genes,regions[j]])
+    
+    colnames(t) <- c("avg78","avg79")
+    c <- cor.test(t$avg78, t$avg79)$estimate
+    
+    df[i,j] <-c
+  }
+}
+colnames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+rownames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+tiff("figures/Cor.region.spatial.tif", units="in", width=4, height=3, res=300)
+pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
+dev.off()
+
+# Nanopore ISOG correlation
+avg79 <- AverageExpression(object = CBS2, return.seurat = TRUE, assay="ISOG")
+avg78 <- AverageExpression(object = CBS1, return.seurat = TRUE, assay="ISOG")
+
+genes <- intersect(rownames(avg78@assays$ISOG@data), rownames(avg79@assays$ISOG@data))
+length(genes)
+
+df <- data.frame()
+for (i in (1:length(regions))){
+  
+  df2<- data.frame()
+  for (j in (1:length(regions))){
+    t <- data.frame(avg78@assays$ISOG@data[genes,regions[i]], avg79@assays$ISOG@data[genes,regions[j]])
+    
+    colnames(t) <- c("avg78","avg79")
+    c <- cor.test(t$avg78, t$avg79)$estimate
+    
+    df[i,j] <-c
+  }
+}
+colnames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+rownames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+tiff("figures/Cor.region.ISOG.tif", units="in", width=4, height=3, res=300)
+pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
+dev.off()
+
+# Nanopore ISO correlation
+avg79 <- AverageExpression(object = CBS2, return.seurat = TRUE, assay="ISO")
+avg78 <- AverageExpression(object = CBS1, return.seurat = TRUE, assay="ISO")
+
+genes <- intersect(rownames(avg78@assays$ISO@data), rownames(avg79@assays$ISO@data))
+length(genes)
+
+df <- data.frame()
+for (i in (1:length(regions))){
+  
+  df2<- data.frame()
+  for (j in (1:length(regions))){
+    t <- data.frame(avg78@assays$ISO@data[genes,regions[i]], avg79@assays$ISO@data[genes,regions[j]])
+    
+    colnames(t) <- c("avg78","avg79")
+    c <- cor.test(t$avg78, t$avg79)$estimate
+    
+    df[i,j] <-c
+  }
+}
+colnames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+rownames(df) <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+tiff("figures/Cor.region.ISO.tif", units="in", width=4, height=3, res=300)
+pheatmap(df, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color = colorRampPalette(rev(brewer.pal(n = 7, name = "RdYlBu")))(length(breaksList)), breaks = breaksList)
+dev.off()
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

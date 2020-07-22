@@ -1,0 +1,198 @@
+---
+title: "SiT - Ratio analysis Spatial/ISOG/ISO"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+```
+
+# MOB
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/")
+source("00.import.R")
+
+MOB <- readRDS("./output/MOB.nanopore.rds")
+SpatialDimPlot(MOB, label = TRUE, label.size = 3, pt.size.factor =2)
+col=ggplotColours(n = length(unique(MOB@active.ident)))
+
+SpatialFeaturePlot(MOB, features = c("nCount_Spatial","nCount_ISOG","nCount_ISO"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+MOB[['ratio_spatial_isog']] <- log(MOB@meta.data$nCount_Spatial/MOB@meta.data$nCount_ISOG,2)
+SpatialFeaturePlot(MOB, features = c("ratio_spatial_isog"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+MOB[['ratio_isog_iso']] <- log(MOB@meta.data$nCount_ISOG/MOB@meta.data$nCount_ISO,2)
+SpatialFeaturePlot(MOB, features = c("ratio_isog_iso"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+DefaultAssay(MOB) <- "Spatial"
+x <- rownames(MOB@assays$Spatial@counts[grep("Rna", rownames(MOB@assays$Spatial@counts)),])
+
+MOB <- AddModuleScore(MOB, list(x), name="rnase")
+print(x)
+DotPlot(MOB,features=x) + RotatedAxis()
+
+VlnPlot(MOB, features=c("ratio_spatial_isog","ratio_isog_iso"))
+
+p1 <- SpatialDimPlot(MOB, label = TRUE, label.size = 3, pt.size.factor =2)
+p2 <- ggplot(data=MOB@meta.data, aes(x=rnase1,y=ratio_isog_iso)) +  geom_point(shape = 21, colour = "black", fill = col[MOB@meta.data$ClusterName]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+plot_grid(p1,p2)
+
+```
+
+# CBS1
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+
+#cat("barcode,id\n", file="identity.csv")
+#write.table(CBS1@active.ident, file="identity.csv", sep=",", col.names = F, append=TRUE)
+
+CBS1 <- readRDS("./output/CBS1.nanopore.rds")
+SpatialDimPlot(CBS1, label = TRUE, label.size = 3, pt.size.factor =2)
+col=ggplotColours(n = length(unique(CBS1@active.ident)))
+
+SpatialFeaturePlot(CBS1, features = c("nCount_Spatial","nCount_ISOG","nCount_ISO"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+p1 <- ggplot(data=CBS1@meta.data, aes(x=nCount_Spatial,y=nCount_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[CBS1@meta.data$ClusterName]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+p2 <- ggplot(data=CBS1@meta.data, aes(x=nCount_ISOG,y=nCount_ISO)) +  geom_point(shape = 21, colour = "black", fill = col[CBS1@meta.data$ClusterName]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+plot_grid(p1,p2)
+
+CBS1[['ratio_spatial_isog']] <- log(CBS1@meta.data$nCount_Spatial/CBS1@meta.data$nCount_ISOG,2)
+CBS1[['ratio_isog_iso']] <- log(CBS1@meta.data$nCount_ISOG/CBS1@meta.data$nCount_ISO,2)
+SpatialFeaturePlot(CBS1, features = c("ratio_spatial_isog","ratio_isog_iso"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+DefaultAssay(CBS1) <- "Spatial"
+x <- rownames(CBS1@assays$Spatial@counts[grep("Rna", rownames(CBS1@assays$Spatial@counts)),])
+
+CBS1 <- AddModuleScore(CBS1, list(x), name="rnase")
+print(x)
+DotPlot(CBS1,features=x) + RotatedAxis()
+
+SpatialFeaturePlot(CBS2, features = c("rnase1"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+
+VlnPlot(CBS1, features=c("ratio_spatial_isog","ratio_isog_iso"))
+
+p1 <- SpatialDimPlot(CBS1, label = TRUE, label.size = 3, pt.size.factor =2)
+p2 <- ggplot(data=CBS1@meta.data, aes(x=rnase1,y=ratio_isog_iso)) +  geom_point(shape = 21, colour = "black", fill = col[CBS1@meta.data$ClusterName]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+plot_grid(p1,p2)
+
+VlnPlot(CBS1, features=c("percent.mito","percent.ribo"))
+
+```
+
+# CBS2
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+CBS2 <- readRDS("./output/CBS2.nanopore.rds")
+SpatialDimPlot(CBS2, label = TRUE, label.size = 3, pt.size.factor =2)
+col=ggplotColours(n = length(unique(CBS2@active.ident)))
+
+SpatialFeaturePlot(CBS2, features = c("nCount_Spatial","nCount_ISOG","nCount_ISO"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+p1 <- ggplot(data=CBS2@meta.data, aes(x=nCount_Spatial,y=nCount_ISOG)) +  geom_point(shape = 21, colour = "black", fill = col[CBS2@meta.data$ClusterName]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+p2 <- ggplot(data=CBS2@meta.data, aes(x=nCount_ISOG,y=nCount_ISO)) +  geom_point(shape = 21, colour = "black", fill = col[CBS2@meta.data$ClusterName]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+plot_grid(p1,p2)
+
+
+
+CBS2[['ratio_spatial_isog']] <- log(CBS2@meta.data$nCount_Spatial/CBS2@meta.data$nCount_ISOG,2)
+CBS2[['ratio_isog_iso']] <- log(CBS2@meta.data$nCount_ISOG/CBS2@meta.data$nCount_ISO,2)
+SpatialFeaturePlot(CBS2, features = c("ratio_spatial_isog","ratio_isog_iso"), pt.size.factor = 2, alpha = c(0.1, 1))
+
+DefaultAssay(CBS2) <- "Spatial"
+x <- rownames(CBS2@assays$Spatial@counts[grep("Rna", rownames(CBS2@assays$Spatial@counts)),])
+print(x)
+
+CBS2 <- AddModuleScore(CBS2, list(x), name="rnase")
+DotPlot(CBS2,features=x) + RotatedAxis()
+
+VlnPlot(CBS2, features=c("ratio_spatial_isog","ratio_isog_iso"))
+
+p1 <- SpatialDimPlot(CBS2, label = TRUE, label.size = 3, pt.size.factor =2)
+p2 <- ggplot(data=CBS2@meta.data, aes(x=rnase1,y=ratio_isog_iso)) +  geom_point(shape = 21, colour = "black", fill = col[CBS2@meta.data$ClusterName]) +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank())
+plot_grid(p1,p2)
+
+VlnPlot(CBS2, features=c("percent.mito","percent.ribo"))
+
+```
+
+# genes by genes
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+CBS2 <- readRDS("./output/CBS2.nanopore.rds")
+
+common <- intersect(rownames(CBS2@assays$Spatial@data), rownames(CBS2@assays$ISOG@data))
+thalamus <- WhichCells(CBS2, ident="Thalamus")
+
+x <- as.data.frame(Matrix::rowSums(CBS2@assays$Spatial@counts[,thalamus]))
+y <- as.data.frame(Matrix::rowSums(CBS2@assays$ISOG@counts[,thalamus]))
+
+df <- merge(x,y,by=0,all=T)
+colnames(df) <- c("Rownames","spatial","isog")
+head(df)
+df$A <- log((df$spatial+df$isog)/2,2)
+df$M <- log(((df$spatial+1)/(df$isog+1)),2)
+head(df)
+df$id <- rownames(df)
+write.table(df, file="df.csv", sep=",")
+
+ggplot(data=df, aes(x=A,y=M)) +  geom_point(shape = 21, colour = "black", fill = "black") +
+      theme_bw() + theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+      geom_text_repel(data=subset(df, df$spatial > 1000 & df$M > 5), aes(label=id), size=3) +
+      geom_point(data=subset(df, df$Spatial > 1000 & df$M > 5), col="red")
+
+write.table(df, file="df.csv", sep=",")
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+
