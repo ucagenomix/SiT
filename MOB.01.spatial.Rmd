@@ -1,0 +1,161 @@
+---
+title: "SiT - Mouse Olfactory Bulb (MOB) - 01.spatial"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+```
+
+# Loading Spatial data
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/000-github")
+source("00.common.import.R")
+
+MOB <- Load10X_Spatial(data.dir = "/data/10x_data/10x_visium/illumina/MOB")
+#ribo.genes <- grep(pattern = "^Rp[sl]", x = rownames(data))
+#mito.genes <- grep(pattern = "^mt-", x = rownames(data))
+#data <- data[-c(ribo.genes,mito.genes),]
+
+VlnPlot(MOB, features = c("nCount_Spatial","nFeature_Spatial"), pt.size = 0.1) + NoLegend() + ggtitle("MOB nCount_Spatial")
+SpatialFeaturePlot(MOB, features = c("nCount_Spatial","nFeature_Spatial"), max.cutoff = 30000, pt.size.factor = 1.6) + 
+  theme(legend.position = "right") + 
+  ggtitle("MOB nCount_Spatial")
+
+```
+
+# Quality control, no filtration
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=12}
+
+mito.genes <- grep(pattern = "^mt-", x = rownames(MOB@assays$Spatial), value = TRUE)
+dropouts <- Matrix::colSums(MOB@assays$Spatial@data == 0)/nrow(MOB@assays$Spatial)
+ribo.genes <- grep(pattern = "^Rp[sl]", x = rownames(MOB@assays$Spatial), value = TRUE)
+percent.mito <- Matrix::colSums(MOB@assays$Spatial[mito.genes, ])/Matrix::colSums(MOB@assays$Spatial)
+percent.ribo <- Matrix::colSums(MOB@assays$Spatial[ribo.genes, ])/Matrix::colSums(MOB@assays$Spatial)
+MOB[['percent.mito']] <- percent.mito
+MOB[['percent.ribo']] <- percent.ribo
+MOB[['dropouts']] <- dropouts
+
+VlnPlot(MOB, features = c("nFeature_Spatial", "nCount_Spatial","dropouts","percent.ribo","percent.mito"), ncol=5, cols = "lightsteelblue3") + ggtitle("MOB")
+
+```
+
+# SCTransform normalization and clustering
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+MOB <- SCTransform(MOB, assay = "Spatial", verbose = FALSE)
+MOB <- RunPCA(MOB, assay = "SCT", verbose = FALSE)
+MOB <- RunUMAP(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindNeighbors(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindClusters(MOB, verbose = FALSE, resolution = 0.4)
+
+DimPlot(MOB, reduction = "umap", label = TRUE) + ggtitle("MOB")
+SpatialDimPlot(MOB, label = TRUE, label.size = 3, pt.size.factor = 3) + ggtitle("MOB")
+
+```
+
+# Clusters re-labelling
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+new.cluster.ids <- c("Olfactory Nerve Layer (ONL)","Glomerular Layer (GL)","Granule Cell Layer (GCL+RMS)","Outer plexiform Layer (EPL)","Mitral Cell Layer (MCL)")
+names(x = new.cluster.ids) <- levels(x = MOB)
+MOB <- RenameIdents(object = MOB, new.cluster.ids)
+
+my_levels <- c("Granule Cell Layer (GCL+RMS)","Mitral Cell Layer (MCL)","Outer plexiform Layer (EPL)","Glomerular Layer (GL)","Olfactory Nerve Layer (ONL)")
+# Relevel object@ident
+MOB@active.ident <- factor(x = MOB@active.ident, levels = my_levels)
+
+SpatialDimPlot(MOB, label = TRUE, label.size = 3, pt.size.factor =3) + ggtitle("MOB")
+
+```
+
+# Gene Markers Heatmap
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=10, fig.width=8 }
+
+DefaultAssay(object = MOB) <- "Spatial"
+MOB <- NormalizeData(MOB)
+MOB <- ScaleData(MOB)
+markers <- FindAllMarkers(object = MOB, only.pos = TRUE)
+top <- markers %>% group_by(cluster) %>% top_n(15, avg_log2FC)
+DoHeatmap(MOB, features=top$gene, size=3.5)
+write.table(markers, file="./output/MOB.markers.csv", sep=",")
+
+```
+
+# Correlation between clusters
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+MOB@meta.data$ClusterName <- MOB@active.ident
+
+mnmat <- c()
+uniq <- unique(MOB@active.ident)
+for(i in 1:length(uniq)){
+  mnmat <- cbind(mnmat, apply(as.matrix(MOB@assays$SCT@data[, MOB@meta.data$ClusterName==uniq[i]]), 1, mean))
+}
+
+colnames(mnmat) <- as.vector(unique(MOB@active.ident))
+ct=cor(mnmat)
+pheatmap(ct)
+
+```
+
+# Gene Markers Visualization
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=12 }
+
+SpatialFeaturePlot(MOB, features = c("Fabp7","Nnat","Apod"), ncol=3, pt.size.factor =2)
+SpatialFeaturePlot(MOB, features = c("Nrsn1","Calb2","Eomes"), ncol=3, pt.size.factor =2)
+SpatialFeaturePlot(MOB, features = c("Bc1","Cnot3","Slc1a2"), ncol=3, pt.size.factor =2)
+SpatialFeaturePlot(MOB, features = c("Shisa3","Thy1","Reln"), ncol=3, pt.size.factor =2)
+SpatialFeaturePlot(MOB, features = c("Meis2","Nrgn","Sept4"), ncol=3, pt.size.factor =2)
+
+saveRDS(MOB, "./output/MOB.rds")
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

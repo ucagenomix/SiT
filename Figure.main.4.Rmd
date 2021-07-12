@@ -1,0 +1,288 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/000-github/000-publish")
+source("/data/10x_data/00.common.import.R")
+
+CBS2 <- readRDS("../output/CBS2.nanopore.rds")
+CBS1 <- readRDS("../output/CBS1.nanopore.rds")
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+```
+
+# dotPlot
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+
+features <- c('Snap25','Cnih2','Gnas','Bin1','Caly','Dtnbp1','Aldoa')
+
+DefaultAssay(object = CBS2) <- "SCT"
+pdf("figures/dotplot.spatial.pdf", width=16, height=20, useDingbats=FALSE)
+print(DotPlot(object = CBS2, features = features, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "red")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+dev.off()
+
+DefaultAssay(object = CBS2) <- "ISOG"
+pdf("figures/dotplot.isog.pdf", width=16, height=20, useDingbats=FALSE)
+DotPlot(object = CBS2, features = features, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "purple")) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+dev.off()
+
+DefaultAssay(object = CBS2) <- "ISO"
+lst <- c("Snap25..ENSMUST00000028727.10","Snap25..ENSMUST00000110098.3","Cnih2..ENSMUST00000025805.7","Cnih2..ENSMUST00000235638.1","Gnas..ENSMUST00000156623.7","Gnas..ENSMUST00000109087.7","Gnas..ENSMUST00000109084.7","Bin1..ENSMUST00000025239.8","Bin1..ENSMUST00000234496.1","Caly..ENSMUST00000211283.1","Caly..ENSMUST00000211044.1","Dtnbp1..ENSMUST00000072329.14","Dtnbp1..ENSMUST00000222321.1","Aldoa..ENSMUST00000032934.11","Aldoa..ENSMUST00000106348.7")  
+
+pdf("figures/dotplot.iso.pdf", width=16, height=20, useDingbats=FALSE)
+DotPlot(object = CBS2, features = lst, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+dev.off()
+
+```
+
+# VlnPlot
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+DefaultAssay(CBS2) <- "SCT"
+
+features<- c("Snap25", "Cnih2", "Gnas", "Bin1", "Caly", "Dtnbp1", "Aldoa")
+pdf("figures/violin.illu.pdf", width=12, height=10, useDingbats=FALSE)
+StackedVlnPlot(obj = CBS2, features = features)
+dev.off()
+
+DefaultAssay(CBS2) <- "ISOG"
+pdf("figures/violin.isog.pdf", width=12, height=10, useDingbats=FALSE)
+StackedVlnPlot(obj = CBS2, features = features)
+dev.off()
+
+DefaultAssay(object = CBS2) <- "ISO"
+lst <- c("Snap25..ENSMUST00000028727.10","Snap25..ENSMUST00000110098.3","Cnih2..ENSMUST00000025805.7","Cnih2..ENSMUST00000235638.1","Gnas..ENSMUST00000156623.7","Gnas..ENSMUST00000109087.7","Gnas..ENSMUST00000109084.7","Bin1..ENSMUST00000025239.8","Bin1..ENSMUST00000234496.1","Caly..ENSMUST00000211283.1","Caly..ENSMUST00000211044.1","Dtnbp1..ENSMUST00000072329.14","Dtnbp1..ENSMUST00000222321.1","Aldoa..ENSMUST00000032934.11","Aldoa..ENSMUST00000106348.7")  
+
+pdf("figures/violin.iso.pdf", width=16, height=20, useDingbats=FALSE)
+StackedVlnPlot(obj = CBS2, features = lst)
+dev.off()
+
+```
+
+# Snap25
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+x <- unique(rownames(CBS2@assays$ISO@data)[grep(paste("^Snap25..",sep=""), rownames(CBS2@assays$ISO@data))])
+DefaultAssay(CBS2) <- "ISO"
+
+pdf("Fig.2c.pdf", width=10, height=6, useDingbats=FALSE)
+SpatialFeaturePlot(CBS2, features = x, pt.size.factor=1.8, alpha = c(1, 1))
+dev.off()
+
+a.2 <- aggregate(CBS2@assays$ISO@counts["Snap25..ENSMUST00000028727.10",], list(CBS2@active.ident), sum)
+b.2 <- aggregate(CBS2@assays$ISO@counts["Snap25..ENSMUST00000110098.3",], list(CBS2@active.ident), sum)
+a.1 <- aggregate(CBS1@assays$ISO@counts["Snap25..ENSMUST00000028727.10",], list(CBS1@active.ident), sum)
+b.1 <- aggregate(CBS1@assays$ISO@counts["Snap25..ENSMUST00000110098.3",], list(CBS1@active.ident), sum)
+a.1 <- a.1[-c(13),]
+b.1 <- b.1[-c(13),]
+
+snap25 <- cbind(a.1,b.1$x,a.2$x,b.2$x)
+colnames(snap25) <- c("region","CBS1.201","CBS1.202","CBS2.201","CBS2.202")
+snap25$CBS1.ratio <- (100*snap25$CBS1.202)/(snap25$CBS1.202+snap25$CBS1.201)
+snap25$CBS2.ratio <- (100*snap25$CBS2.202)/(snap25$CBS2.202+snap25$CBS2.201)
+
+snap25 <- snap25[,c("region","CBS1.ratio","CBS2.ratio")]
+
+df <- melt(snap25, id.vars="region")
+
+pdf("snap25.barplot.pdf", width=10, height=6, useDingbats=FALSE)
+ggplot(df, aes(x=region, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal() + coord_flip() + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_fill_manual(values=c("#3D8EC7", "#194F97")) 
+dev.off()    
+        
+```
+
+# Integration of external data (zeisel et al., Cell report, 2018)
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+zeisel <- readRDS("zeisel.sub8k.rds")
+
+# Snap25 expresser cell types
+a <- aggregate(zeisel@assays$RNA@counts["Snap25",], list(zeisel@meta.data$ClusterName), sum)
+a$nb <- as.data.frame(table(zeisel@meta.data$ClusterName))$Freq
+a$avg <- a$x/a$nb
+barplot(a$avg)
+snap25_cell_types <- as.character(a[a$avg>5,]$Group.1)
+snap25_cell_types <- str_replace_all(snap25_cell_types, " ", ".")
+snap25_cell_types <- str_replace_all(snap25_cell_types, "-", ".")
+
+# ---------------------------
+# Spotlight deconvolution
+# --------------------------
+#Seurat::Idents(object = zeisel) <- zeisel@meta.data$ClusterName
+#cluster_markers_all <- Seurat::FindAllMarkers(object = zeisel, 
+#                                              assay = "SCT",
+#                                              slot = "data",
+#                                              verbose = TRUE, 
+#                                              only.pos = TRUE)
+
+#saveRDS(object = cluster_markers_all, file = here::here("markers_zeisel.rds"))
+#set.seed(123)
+#spotlight_ls <- spotlight_deconvolution(
+#  se_sc = zeisel,
+#  counts_spatial = CBS2@assays$Spatial@counts,
+#  clust_vr = "ClusterName", # Variable in sc_seu containing the cell-type annotation
+#  cluster_markers = cluster_markers_all, # Dataframe with the marker genes
+#  cl_n = 100, # number of cells per cell type to use
+#  hvg = 3000, # Number of HVG to use
+#  ntop = NULL, # How many of the marker genes to use (by default all)
+#  transf = "uv", # Perform unit-variance scaling per cell and spot prior to factorzation and NLS
+#  method = "nsNMF", # Factorization method
+#  min_cont = 0 # Remove those cells contributing to a spot below a certain threshold 
+#)
+#saveRDS(object = spotlight_ls, file = here::here("spotlight_zeisel_TaxonomyRank4_CBS2.rds"))
+
+#spotlight_ls <- readRDS("spotlight_zeisel_TaxonomyRank4_CBS2.rds")
+spotlight_ls <- readRDS("spotlight_zeisel_ClusterName.rds")
+
+nmf_mod <- spotlight_ls[[1]]
+decon_mtrx <- spotlight_ls[[2]]
+
+h <- NMF::coef(nmf_mod[[1]])
+rownames(h) <- paste("Topic", 1:nrow(h), sep = "_")
+
+topic_profile_plts <- SPOTlight::dot_plot_profiles_fun(
+  h = h,
+  train_cell_clust = nmf_mod[[2]])
+
+topic_profile_plts[[2]] + ggplot2::theme(
+  axis.text.x = ggplot2::element_text(angle = 90), 
+  axis.text = ggplot2::element_text(size = 12))
+
+topic_profile_plts[[1]] + theme(axis.text.x = element_text(angle = 90), 
+                                axis.text = element_text(size = 12))
+
+basis_spotlight <- data.frame(NMF::basis(nmf_mod[[1]]))
+
+colnames(basis_spotlight) <- unique(stringr::str_wrap(nmf_mod[[2]], width = 30))
+
+#######################################################
+# remove contributing cell types under 8% --> this is usefull for scatterpie spotlight plot not to have too many contributing cells
+# we could keep all contributions for latter correlation computation, tested, improve a bit but message is the same so keep that standard filtering
+# except for SiTx visualisation this gives much nicer representation
+#######################################################
+decon_mtrx_sub <- decon_mtrx[, colnames(decon_mtrx) != "res_ss"]
+#decon_mtrx_sub[decon_mtrx_sub < 0.08] <- 0
+decon_mtrx <- cbind(decon_mtrx_sub, "res_ss" = decon_mtrx[, "res_ss"])
+rownames(decon_mtrx) <- colnames(CBS2)
+
+decon_df <- decon_mtrx %>%
+  data.frame() %>%
+  tibble::rownames_to_column("barcodes")
+
+CBS2@meta.data <- CBS2@meta.data %>%
+  tibble::rownames_to_column("barcodes") %>%
+  dplyr::left_join(decon_df, by = "barcodes") %>%
+  tibble::column_to_rownames("barcodes")
+
+#Seurat::SpatialFeaturePlot(
+#  object = CBS2,
+#  features = snap25_cell_types,
+#  alpha = c(0.1, 1),
+#  pt.size.factor = 2.5)
+
+#SPOTlight::spatial_scatterpie(se_obj = CBS2,
+#                              cell_types_all = snap25_cell_types,
+#                              img_path = "/data/10x_data/10x_visium/illumina/CBS2/spatial/tissue_lowres_image.png",
+#                              pie_scale = 0.6)
+
+#col=as.data.frame(ggplotColours(n = length(unique(zeisel@meta.data$TaxonomyRank4))))
+#col$cell_type <- levels(zeisel@meta.data$TaxonomyRank4)
+#colnames(col) <- c("color","celltype")
+#col
+
+#col <- col[col$celltype %in% snap25_cell_types,]
+
+#SPOTlight::spatial_scatterpie(se_obj = CBS2,
+#                              cell_types_all = snap25_cell_types,
+#                              img_path = "/data/10x_data/10x_visium/illumina/CBS2/spatial/tissue_lowres_image.png",
+#                              pie_scale = 0.5, scatterpie_alpha = 2)  +
+#                              scale_fill_manual(values = col[, "color"], breaks = snap25_cell_types)
+
+#x <- rownames(CBS2@assays$ISO@counts)[grep ("^Snap25", rownames(CBS2@assays$ISO@counts))]
+
+v <- numeric()
+v2 <- numeric()
+for(i in 1:length(snap25_cell_types)){
+  df <- data.frame()
+  x <- cor.test(CBS2@meta.data[,snap25_cell_types[i]],CBS2@assays$ISO@data["Snap25..ENSMUST00000028727.10",])$estimate
+  x2 <- cor.test(CBS2@meta.data[,snap25_cell_types[i]],CBS2@assays$ISO@data["Snap25..ENSMUST00000110098.3",])$estimate
+  v <- c(v, x)
+  v2 <- c(v2, x2)
+}
+df <- as.data.frame(cbind(v,v2))
+rownames(df) <- snap25_cell_types
+colnames(df) <- c("Snap25-201","Snap25-202")
+df[is.na(df)] <- 0
+
+pheatmap(df, cluster_rows=TRUE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+df$id <- rownames(df)
+df <- melt(df,id.vars = "id")
+
+ggplot(data=df, aes(x=id, y=value, fill=variable)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  #geom_text(aes(label=variable), vjust=1.6, color="white",
+  #          position = position_dodge(0.9), size=3.5)+
+  scale_fill_manual(values=c("#ff0000", "#ff9015")) +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+
