@@ -1,0 +1,79 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/000-github/000-publish/")
+source("/data/10x_data/00.common.import.R")
+
+MOB <- readRDS("../output/MOB.nanopore.rds")
+
+```
+
+# Myl6
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=10}
+
+gene <- "Myl6"
+x <- unique(rownames(MOB@assays$ISO@scale.data)[grep(paste("^",gene,"\\.\\.",sep=""), rownames(MOB@assays$ISO@scale.data))])
+DefaultAssay(object = MOB) <- "ISO"
+x <- c("Myl6..ENSMUST00000164181.1","Myl6..ENSMUST00000218127.1")
+SpatialFeaturePlot(MOB, features = x)
+
+pdf("myl6.pdf", width=10, height=6, useDingbats=FALSE)
+SpatialFeaturePlot(MOB, features = x)
+dev.off()
+
+avg.iso.scale <- AverageExpression(CBS2, assay="ISO",return.seurat = TRUE, slot = "data")
+avg.spatial.scale <- AverageExpression(CBS2, assay="Spatial",return.seurat = TRUE, slot = "data")
+xxx <- rbind(avg.iso.scale@assays$ISO@data[x,],avg.spatial.scale@assays$Spatial@data[c("Bin1"),])
+pheatmap(xxx, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8)
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

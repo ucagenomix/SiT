@@ -1,0 +1,259 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/final/")
+source("00.import.R")
+
+library(Seurat)
+library(ggplot2)
+library(tidyverse)
+library(patchwork)
+library(reshape2)
+
+MOB <- readRDS("./output/MOB.nanopore.rds")
+CBS1 <- readRDS("./output/CBS1.nanopore.rds")
+CBS2 <- readRDS("./output/CBS2.nanopore.rds")
+
+```
+
+# Editing ratios
+
+```{r}
+
+# EDIT100K
+CBS2[['AtoI_A']] <- Matrix::colSums(CBS2@assays$AtoI@counts[,])
+CBS2[['AtoI_G']] <- Matrix::colSums(CBS2@assays$AtoI@data[,])
+CBS2[['AtoI_total']] <- CBS2[['AtoI_A']]+CBS2[['AtoI_G']]
+CBS2[['AtoI_ratio']] <- CBS2[['AtoI_G']]/CBS2[['AtoI_total']]
+exlude <- which(is.na(CBS2[['AtoI_ratio']]))
+
+#MOB
+MOB[['AtoI_A']] <- Matrix::colSums(MOB@assays$AtoI@counts[,])
+MOB[['AtoI_G']] <- Matrix::colSums(MOB@assays$AtoI@data[,])
+MOB[['AtoI_total']] <- MOB[['AtoI_A']]+MOB[['AtoI_G']]
+MOB[['AtoI_ratio']] <- MOB[['AtoI_G']]/MOB[['AtoI_total']]
+exlude.MOB <- which(is.na(MOB[['AtoI_ratio']]))
+
+```
+
+# Observations
+
+```{r}
+
+
+color.codes <- data.frame(region=c("Midbrain", "Hippocampus area",
+                                   "Isocortex-1", "Isocortex-2",
+                                   "Olfactory area","Fiber tracts",
+                                  "Retrosplenial area","CA1/CA2",
+                                   "Thalamus", "Hypothalamus",
+                                   "CA3", "DG"),
+                          fill=c("#F8766D",
+                            "#DE8C00",
+                            "#B79F00",
+                            "#7CAE00",
+                            "#00BA38",
+                            "#00C08B",
+                            "#00BFC4",
+                            "#00B4F0",
+                            "#619CFF",
+                            "#C77CFF",
+                            "#F564E3",
+                            "#FF64B0"))
+       
+
+color.codes <- color.codes[match(c("CA3", "DG", "Fiber tracts", 
+                                   "CA1/CA2","Hippocampus area", 
+                                   "Hypothalamus", "Isocortex-1",
+                                   "Isocortex-2", "Retrosplenial area", 
+                                   "Midbrain", "Olfactory area", "Thalamus"),
+                                 color.codes$region),]
+color.codes.vec <- as.vector(color.codes$fill)
+names(color.codes.vec) <- color.codes$region
+
+# --------- Gloal editing observations -----------
+
+CBS2@meta.data[-exlude, ] %>% group_by(ClusterName) %>%
+                    summarize(mean(AtoI_ratio)) 
+
+#We exlude 5 spots with Inf values (No Non-editied molecule detected)
+df <- CBS2@meta.data[-exlude, ]
+df$ClusterName <- factor(df$ClusterName, levels=c("CA3", "DG", "Fiber tracts", 
+                                   "CA1/CA2","Hippocampus area", 
+                                   "Hypothalamus", "Isocortex-1",
+                                   "Isocortex-2", "Retrosplenial area", 
+                                   "Midbrain", "Olfactory area", "Thalamus"))
+#Boxplot
+gg.box.global <- ggplot(data=df, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName, fill=ClusterName))+
+  geom_boxplot(outlier.shape = NA) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0)) +
+  ylab("Editing ratio") + xlab("") + theme_bw() + scale_fill_manual(values=color.codes.vec)
+
+# ---------------- MOB
+df <- MOB@meta.data[-exlude.MOB, ]
+df$ClusterName <- factor(df$ClusterName, levels=c("Glomerular Layer (GL)",
+                                                  "Granule Cell Layer (GCL+RMS)",
+                                                  "Mitral Cell Layer (MCL)",
+                                                  "Olfactory Nerve Layer (ONL)",
+                                                  "Outer plexiform Layer (EPL)"))
+
+df %>% group_by(ClusterName) %>%
+                    summarize(mean(AtoI_ratio)) 
+#Boxplot
+gg.box.global.mob <- ggplot(data=df, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName, fill=ClusterName))+
+  geom_boxplot(outlier.shape = NA) + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0)) +
+  ylab("Editing ratio") + xlab("") + theme_bw() 
+
+
+```
+
+# Shuffle tests
+
+```{r}
+
+shuffle.test.global.ratio <- function(meta.data, regions){
+  #Returns a ggplot2 and prints probabilites
+  region.ratios <- vector(mode = "numeric", length = length(regions))
+  names(region.ratios) <- regions
+  one.test <- function(df){
+  df_sim <- df %>% 
+                mutate(simulated_region = sample(ClusterName, replace = F)) %>%
+                  group_by(simulated_region) %>%
+                    summarize(simulated_ratio = mean(AtoI_ratio))
+    for(region in regions){
+      region.ratios[region] <- df_sim[which(df_sim$simulated_region==region), ]$simulated_ratio
+    }
+  region.ratios
+  }
+
+  many.tests <- t(replicate(10000, one.test(meta.data)))
+  
+  gg.list <- vector(mode = "list", length = length(regions))
+  names(gg.list) <- regions #list of ggplots
+  # ---- Create ggplots
+  for(region in regions){
+      x <- many.tests[, region]
+      #Add quantiles
+      probs <- c(0.05, 0.95)
+      ggdf <- as.data.frame(x=x)
+      quantiles <- quantile(x, prob=probs)
+      bw <- 2 * IQR(x) / length(x)^(1/3)
+      gg <- ggplot(ggdf, aes(x =  x)) + 
+        geom_histogram(aes(y = ..density..), binwidth=bw,
+                       fill = "grey", color = "black")
+      
+      # Fit a normal distribution from the simulated data
+      normal.df <-data.frame(x = x, y = dnorm(x, mean(x), sd(x)))
+      
+      gg <- gg + geom_line(data = normal.df, aes(x = x, y = y), color = "red")
+      gg <- gg + theme_bw() + xlab("G/A ratio")+ ylab("Frequency")
+      gg <- gg + geom_vline(xintercept = quantiles, col="blue")
+    
+      #Print probabilites
+      print(paste("For region: ", region))
+      test.prob <- meta.data %>% group_by(ClusterName) %>%
+                      summarize(mean(AtoI_ratio)) %>% filter(ClusterName==region)
+      print(paste("pnorm of lower tail: ",  pnorm(test.prob$`mean(AtoI_ratio)`, mean = mean(x), sd = sd(x), lower.tail=T)))
+      print(paste("pnorm of higher tail: ",  pnorm(test.prob$`mean(AtoI_ratio)`, mean = mean(x), sd = sd(x), lower.tail=F)))
+      gg.list[[region]] <- gg
+    }
+
+  return(gg.list)
+}
+
+
+```
+
+# Obtain plots
+
+```{r}
+
+set.seed(123)
+
+gg.global <- shuffle.test.global.ratio(CBS2@meta.data[-exlude, ], c("Fiber tracts", "Thalamus"))
+
+
+gg.global.MOB <- shuffle.test.global.ratio(MOB@meta.data[-exlude.MOB, ], c("Mitral Cell Layer (MCL)", "Olfactory Nerve Layer (ONL)"))
+
+```
+
+# Combine plots
+
+```{r}
+#CBS2
+#Fibertracts 2.6962097980811e-25
+#Thalamus 2.04290844141822e-18
+pdf("global.editing_CBS2.pdf", width = 12, height = 8)
+gg.box.global / (gg.global[["Fiber tracts"]]+ggtitle("Fiber tract simulation") | gg.global[["Thalamus"]]+ggtitle("Thalamus simulation"))
+dev.off()
+
+#CBS1 --------- OBS need to reload with CBS1 instead of CBS2
+#Fibertracts 
+#Thalamus 
+pdf("global.editing_CBS1.pdf", width = 12, height = 8)
+gg.box.global / (gg.global[["Fiber tracts"]]+ggtitle("Fiber tract simulation") | gg.global[["Thalamus"]]+ggtitle("Thalamus simulation"))
+dev.off()
+
+
+# MOB
+# "For region:  Mitral Cell Layer (MCL)"
+#"pnorm of lower tail:  0.999999453732962"
+#"pnorm of higher tail:  5.46267038084112e-07"
+#"For region:  Olfactory Nerve Layer (ONL)"
+#"pnorm of lower tail:  3.3948504946477e-18"
+#"pnorm of higher tail:  1"
+pdf("global.editing.MOB.pdf", width = 16, height = 10)
+
+print(gg.box.global.mob / (gg.global.MOB[["Mitral Cell Layer (MCL)"]]+ggtitle("Mitral Cell Layer simulation") | gg.global.MOB[["Olfactory Nerve Layer (ONL)"]]+ggtitle("Olfactory Nerve Layer")))
+dev.off()
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

@@ -1,0 +1,290 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/000-github/000-publish/")
+source("/data/10x_data/00.common.import.R")
+
+CBS2 <- readRDS("../output/CBS2.nanopore.rds")
+CBS1 <- readRDS("../output/CBS1.nanopore.rds")
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+```
+
+# Bin1
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=10}
+
+gene <- "Bin1"
+x <- unique(rownames(CBS2@assays$ISO@scale.data)[grep(paste("^",gene,"\\.\\.",sep=""), rownames(CBS2@assays$ISO@scale.data))])
+DefaultAssay(object = CBS2) <- "ISO"
+DefaultAssay(object = CBS1) <- "ISO"
+x <- c("Bin1..ENSMUST00000025239.8","Bin1..ENSMUST00000234496.1")
+p1 <- SpatialFeaturePlot(CBS2, features = x) + ggtitle("CBS2")
+p2 <- SpatialFeaturePlot(CBS1, features = x) + ggtitle("CBS1")
+
+pdf("bin1.pdf", width=8, height=6, useDingbats=FALSE)
+plot_grid(p1,p2,ncol=1)
+dev.off()
+
+pdf("empty.pdf", width=10, height=6, useDingbats=FALSE)
+ImagePlot(se, ncols = 2, method = "raster", type = "masked", darken = F) # Masked image
+dev.off()
+
+avg.iso.scale <- AverageExpression(CBS2, assay="ISO",return.seurat = TRUE, slot = "data")
+avg.spatial.scale <- AverageExpression(CBS2, assay="Spatial",return.seurat = TRUE, slot = "data")
+xxx <- rbind(avg.iso.scale@assays$ISO@data[x,],avg.spatial.scale@assays$Spatial@data[c("Bin1"),])
+pheatmap(xxx, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8)
+
+```
+
+# Bin1 CBS1/CBS2 barplot
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=10}
+
+library(gameofthrones)
+
+DefaultAssay(object = CBS2) <- "ISO"
+isoforms <- rownames(CBS2@assays$ISO@counts)[grep(paste("^Bin1\\.\\.",sep=""), rownames(CBS2@assays$ISO@counts))]
+#isoforms <- c("Bin1..ENSMUST00000025239.8","Bin1..ENSMUST00000234496.1","Bin1..ENSMUST00000234857.1")
+clusters <- unique(CBS2@active.ident)
+df <- data.frame()
+for(i in 1:length(clusters)){
+  #for(j in 1:length(isoforms)){
+    y <- Matrix::rowSums(CBS2@assays$ISO@counts[isoforms, WhichCells(CBS2, ident=clusters[i])])
+    df<-rbind(df,y)
+  #}
+}
+
+colnames(df) <- str_replace(isoforms, "Bin1\\.\\.", "")
+rownames(df) <- paste0(clusters,":CBS2")
+freq_table <- prop.table(as.matrix(df), 1)*100
+
+tmp <- melt(freq_table)
+names(tmp) <- c("clusters", "isoforms", "percentage")
+
+corresp <- c("ENSMUST00000025239.8"="Bin1-201","ENSMUST00000234373.1"="Bin1-204","ENSMUST00000234496.1"="Bin1-205","ENSMUST00000091967.12"="Bin1-202","ENSMUST00000234857.1"="Bin1-206")
+#corresp <- c("ENSMUST00000025239.8"="Bin1-201","ENSMUST00000234496.1"="Bin1-205","ENSMUST00000234857.1"="Bin1-206")
+tmp$ensembl <- corresp[tmp$isoforms]
+
+DefaultAssay(object = CBS1) <- "ISO"
+isoforms <- rownames(CBS2@assays$ISO@counts)[grep(paste("^Bin1\\.\\.",sep=""), rownames(CBS2@assays$ISO@counts))]
+#isoforms <- c("Bin1..ENSMUST00000025239.8","Bin1..ENSMUST00000234496.1","Bin1..ENSMUST00000234857.1")
+clusters <- unique(CBS1@active.ident)
+df <- data.frame()
+for(i in 1:length(clusters)){
+  #for(j in 1:length(isoforms)){
+    y <- Matrix::rowSums(CBS1@assays$ISO@counts[isoforms, WhichCells(CBS1, ident=clusters[i])])
+    df<-rbind(df,y)
+  #}
+}
+
+colnames(df) <- str_replace(isoforms, "Bin1\\.\\.", "")
+rownames(df) <- paste0(clusters,":CBS1")
+freq_table <- prop.table(as.matrix(df), 1)*100
+
+tmp2 <- melt(freq_table)
+names(tmp2) <- c("clusters", "isoforms", "percentage")
+
+corresp <- c("ENSMUST00000025239.8"="Bin1-201","ENSMUST00000234373.1"="Bin1-204","ENSMUST00000234496.1"="Bin1-205","ENSMUST00000091967.12"="Bin1-202","ENSMUST00000234857.1"="Bin1-206")
+#corresp <- c("ENSMUST00000025239.8"="Bin1-201","ENSMUST00000234496.1"="Bin1-205","ENSMUST00000234857.1"="Bin1-206")
+tmp2$ensembl <- corresp[tmp2$isoforms]
+
+both <- rbind(tmp,tmp2)
+
+pdf("bin1.barplot.pdf", width=10, height=6, useDingbats=FALSE)
+ggplot(both, aes(x=clusters, y=percentage, fill=ensembl)) + 
+      geom_bar(stat="identity") + 
+      theme_minimal() + 
+      coord_flip() + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      scale_fill_got(discrete = TRUE, option = "Daenerys") + 
+      ggtitle("Bin1 isoforms expression")
+dev.off()
+
+```
+
+# Deconvolution using Zeisel et al., 2018
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+zeisel <- readRDS("zeisel.sub8k.rds")
+DimPlot(zeisel, label = TRUE)
+
+# Bin1 expresser cell types
+a <- aggregate(zeisel@assays$RNA@counts["Bin1",], list(zeisel@meta.data$ClusterName), sum)
+a$nb <- as.data.frame(table(zeisel@meta.data$ClusterName))$Freq
+a$avg <- a$x/a$nb
+barplot(a$avg)
+bin1_cell_types <- as.character(a[a$avg>0.5,]$Group.1)
+bin1_cell_types <- str_replace_all(bin1_cell_types, " ", ".")
+bin1_cell_types <- str_replace_all(bin1_cell_types, "-", ".")
+
+sub <- subset(zeisel, subset = ClusterName %in% bin1_cell_types)
+DotPlot(sub, features="Bin1", group.by="ClusterName")
+DotPlot(zeisel, features="Bin1", group.by="ClusterName")
+
+#set.seed(123)
+#spotlight_ls <- spotlight_deconvolution(
+#  se_sc = zeisel,
+#  counts_spatial = CBS2@assays$Spatial@counts,
+#  clust_vr = "ClusterName", # Variable in sc_seu containing the cell-type annotation
+#  cluster_markers = cluster_markers_all, # Dataframe with the marker genes
+#  cl_n = 100, # number of cells per cell type to use
+#  hvg = 3000, # Number of HVG to use
+#  ntop = NULL, # How many of the marker genes to use (by default all)
+#  transf = "uv", # Perform unit-variance scaling per cell and spot prior to factorzation and NLS
+#  method = "nsNMF", # Factorization method
+#  min_cont = 0 # Remove those cells contributing to a spot below a certain threshold 
+#)
+#saveRDS(object = spotlight_ls, file = here::here("spotlight_zeisel_ClusterName.rds"))
+
+#spotlight_ls <- readRDS("spotlight_zeisel_TaxonomyRank4_CBS2.rds")
+spotlight_ls <- readRDS("spotlight_zeisel_ClusterName.rds")
+
+nmf_mod <- spotlight_ls[[1]]
+decon_mtrx <- spotlight_ls[[2]]
+
+h <- NMF::coef(nmf_mod[[1]])
+rownames(h) <- paste("Topic", 1:nrow(h), sep = "_")
+#topic_profile_plts <- SPOTlight::dot_plot_profiles_fun(
+#  h = h,
+#  train_cell_clust = nmf_mod[[2]])
+
+#topic_profile_plts[[2]] + ggplot2::theme(
+#  axis.text.x = ggplot2::element_text(angle = 90), 
+#  axis.text = ggplot2::element_text(size = 12))
+
+#topic_profile_plts[[1]] + theme(axis.text.x = element_text(angle = 90), 
+#                                axis.text = element_text(size = 12))
+
+basis_spotlight <- data.frame(NMF::basis(nmf_mod[[1]]))
+
+colnames(basis_spotlight) <- unique(stringr::str_wrap(nmf_mod[[2]], width = 30))
+
+#######################################################
+# remove contributing cell types under 8% --> this is usefull for scatterpie spotligight plot not to have too many contributing cells
+# we could keep all contributions for latter correlation computation, tested, improve a bit but message is the same so keep that standard filtering
+# except for SiTx visualisation this gives much nicer representation
+#######################################################
+decon_mtrx_sub <- decon_mtrx[, colnames(decon_mtrx) != "res_ss"]
+decon_mtrx_sub[decon_mtrx_sub < 0.08] <- 0
+decon_mtrx <- cbind(decon_mtrx_sub, "res_ss" = decon_mtrx[, "res_ss"])
+rownames(decon_mtrx) <- colnames(CBS2)
+
+decon_df <- decon_mtrx %>%
+  data.frame() %>%
+  tibble::rownames_to_column("barcodes")
+
+CBS2@meta.data <- CBS2@meta.data %>%
+  tibble::rownames_to_column("barcodes") %>%
+  dplyr::left_join(decon_df, by = "barcodes") %>%
+  tibble::column_to_rownames("barcodes")
+
+Seurat::SpatialFeaturePlot(
+  object = CBS2,
+  features = bin1_cell_types,
+  alpha = c(0.1, 1),
+  pt.size.factor = 2.5)
+
+SPOTlight::spatial_scatterpie(se_obj = CBS2,
+                              cell_types_all = bin1_cell_types,
+                              img_path = "/data/10x_data/10x_visium/illumina/CBS2/spatial/tissue_lowres_image.png",
+                              pie_scale = 0.5, scatterpie_alpha = 2)
+
+```
+
+# Bin1 isoforms expression correlation
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+v <- numeric()
+v2 <- numeric()
+v3 <- numeric()
+for(i in 1:length(bin1_cell_types)){
+  print(bin1_cell_types[i])
+  x <- cor.test(CBS2@meta.data[,bin1_cell_types[i]],CBS2@assays$ISO@data["Bin1..ENSMUST00000234496.1",])$estimate
+  x2 <- cor.test(CBS2@meta.data[,bin1_cell_types[i]],CBS2@assays$ISO@data["Bin1..ENSMUST00000025239.8",])$estimate
+  x3 <- cor.test(CBS2@meta.data[,bin1_cell_types[i]],CBS2@assays$ISO@data["Bin1..ENSMUST00000234857.1",])$estimate
+  v <- c(v, x)
+  v2 <- c(v2, x2)
+  v3 <- c(v3, x3)
+}
+df <- as.data.frame(cbind(v,v2,v3))
+rownames(df) <- bin1_cell_types
+colnames(df) <- c("Bin1-205","Bin1-201","Bin1-206")
+df[is.na(df)] <- 0
+
+pdf("bin1.heatmap.pdf", width=12, height=6, useDingbats=FALSE)
+pheatmap(df, cluster_rows=TRUE, cluster_cols=TRUE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan", color=colorRampPalette(c("#005f73", "white", "#ae2012"))(50))
+dev.off()
+
+df$id <- rownames(df)
+df <- melt(df,id.vars = "id")
+
+ggplot(data=df, aes(x=id, y=value, fill=variable)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  #geom_text(aes(label=variable), vjust=1.6, color="white",
+  #          position = position_dodge(0.9), size=3.5)+
+  scale_fill_manual(values=c("#A00000","#EE9B00","#005F73")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+pdf("bin1.deconvolution.pdf", width=10, height=6, useDingbats=FALSE)
+Seurat::SpatialFeaturePlot(
+  object = CBS2,
+  features = c("MFOL1","MFOL2","MOL1"),
+  pt.size.factor = 1.5)
+dev.off()
+
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

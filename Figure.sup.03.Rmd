@@ -1,0 +1,206 @@
+---
+title: "SiT - Short read / Long read correlation"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+```
+
+# Loading data
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+setwd("/data/10x_data/10x_visium/000-github/")
+source("00.common.import.R")
+
+```
+
+# MOB
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium <- readRDS("./output/MOB.nanopore.deconv.rds")
+col=ggplotColours(n = length(unique(visium@active.ident)))
+
+median(visium@meta.data$nCount_Spatial)
+median(visium@meta.data$nCount_ISOG)
+median(visium@meta.data$nCount_ISO)
+
+median(visium@meta.data$nFeature_Spatial)
+median(visium@meta.data$nFeature_ISOG)
+median(visium@meta.data$nFeature_ISO)
+
+```
+
+## Percentage Illumina UMIs / Features seen in Nanopore data
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium@meta.data$nCount_profiled <- visium@meta.data$nCount_ISOG*100/visium@meta.data$nCount_Spatial
+mean(visium@meta.data$nCount_profiled)
+visium@meta.data$nFeature_profiled <- visium@meta.data$nFeature_ISOG*100/visium@meta.data$nFeature_Spatial
+mean(visium@meta.data$nFeature_profiled)
+
+```
+
+## Distribution plots
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+plot1 <- ggplot(data=visium@meta.data, aes(nCount_ISO)) + 
+                geom_histogram(breaks=seq(0, 16000, by = 250),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="nCount_ISO") + 
+                theme_minimal() + 
+                labs(x="nCount_ISO", y="Cells")
+
+plot2 <- ggplot(data=visium@meta.data, aes(nFeature_ISO)) + 
+                geom_histogram(breaks=seq(0, 4500, by = 125),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="nFeature_ISO") + 
+                theme_minimal() + 
+                labs(x="nFeature_ISO", y="Cells")
+
+plot_grid(plot1, plot2)
+
+```
+
+# CBS1
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium <- readRDS("./output/CBS1.nanopore.deconv.rds")
+col=ggplotColours(n = length(unique(visium@active.ident)))
+
+median(visium@meta.data$nCount_Spatial)
+median(visium@meta.data$nCount_ISOG)
+median(visium@meta.data$nCount_ISO)
+
+median(visium@meta.data$nFeature_Spatial)
+median(visium@meta.data$nFeature_ISOG)
+median(visium@meta.data$nFeature_ISO)
+
+```
+
+## Percentage Illumina UMIs / Features seen in Nanopore data
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium@meta.data$nCount_profiled <- visium@meta.data$nCount_ISOG*100/visium@meta.data$nCount_Spatial
+mean(visium@meta.data$nCount_profiled)
+visium@meta.data$nFeature_profiled <- visium@meta.data$nFeature_ISOG*100/visium@meta.data$nFeature_Spatial
+mean(visium@meta.data$nFeature_profiled)
+
+```
+
+## Distribution plots
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+plot1 <- ggplot(data=visium@meta.data, aes(nCount_ISO)) + 
+                geom_histogram(breaks=seq(0, 17000, by = 250),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="nCount_ISO") + 
+                theme_minimal() + 
+                labs(x="nCount_ISO", y="Cells")
+
+plot2 <- ggplot(data=visium@meta.data, aes(nFeature_ISO)) + 
+                geom_histogram(breaks=seq(0, 4000, by = 125),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="nFeature_ISO")+ 
+                theme_minimal() + 
+                labs(x="nFeature_ISO", y="Cells")
+
+plot_grid(plot1, plot2)
+
+```
+
+# CBS2
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium <- readRDS("./output/CBS2.nanopore.deconv.rds")
+col=ggplotColours(n = length(unique(visium@active.ident)))
+
+median(visium@meta.data$nCount_Spatial)
+median(visium@meta.data$nCount_ISOG)
+median(visium@meta.data$nCount_ISO)
+
+median(visium@meta.data$nFeature_Spatial)
+median(visium@meta.data$nFeature_ISOG)
+median(visium@meta.data$nFeature_ISO)
+
+```
+
+## Percentage Illumina UMIs / Features seen in Nanopore data
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+visium@meta.data$nCount_profiled <- visium@meta.data$nCount_ISOG*100/visium@meta.data$nCount_Spatial
+mean(visium@meta.data$nCount_profiled)
+visium@meta.data$nFeature_profiled <- visium@meta.data$nFeature_ISOG*100/visium@meta.data$nFeature_Spatial
+mean(visium@meta.data$nFeature_profiled)
+
+```
+
+## Distribution plots
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+plot1 <- ggplot(data=visium@meta.data, aes(nCount_ISO)) + 
+                geom_histogram(breaks=seq(0, 15000, by = 250),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="nCount_ISO") + 
+                theme_minimal() + 
+                labs(x="nCount_ISO", y="Cells")
+
+plot2 <- ggplot(data=visium@meta.data, aes(nFeature_ISO)) + 
+                geom_histogram(breaks=seq(0, 4000, by = 125),col="black",aes(fill=nGene),fill="lightsteelblue3") + 
+                scale_fill_gradient("Count", low = "green", high = "red") +
+                labs(title="nFeature_ISO")+ 
+                theme_minimal() + 
+                labs(x="nFeature_ISO", y="Cells")
+
+plot_grid(plot1, plot2)
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
