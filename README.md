@@ -9,5 +9,7 @@ This github provides all R scripts required for SiT dataset analysis
 
 
 
-* **SiT data are deposited throught GEO, accession number GSE153859 (secure access token required)**
+* **SiT data are deposited throught GEO, accession number GSE153859**
+
+
 
