@@ -1,0 +1,152 @@
+---
+title: "SiT - Mouse Coronal Brain Section (CBS1) - 01.spatial"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+```
+
+# Loading Spatial data
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00-common.import.R")
+
+CBS1 <- Load10X_Spatial(data.dir = "illumina/CBS1")
+#ribo.genes <- grep(pattern = "^Rp[sl]", x = rownames(data))
+#mito.genes <- grep(pattern = "^mt-", x = rownames(data))
+#data <- data[-c(ribo.genes,mito.genes),]
+
+VlnPlot(CBS1, features = c("nCount_Spatial","nFeature_Spatial"), pt.size = 0.1) + NoLegend() + ggtitle("CBS1 nCount_Spatial")
+SpatialFeaturePlot(CBS1, features = c("nCount_Spatial","nFeature_Spatial"), max.cutoff = 30000, pt.size.factor = 1.6) + 
+  theme(legend.position = "right") + 
+  ggtitle("CBS1 nCount_Spatial")
+
+```
+
+# Quality control, no filtration
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=16}
+
+mito.genes <- grep(pattern = "^mt-", x = rownames(CBS1@assays$Spatial), value = TRUE)
+dropouts <- Matrix::colSums(CBS1@assays$Spatial@data == 0)/nrow(CBS1@assays$Spatial)
+ribo.genes <- grep(pattern = "^Rp[sl]", x = rownames(CBS1@assays$Spatial), value = TRUE)
+percent.mito <- Matrix::colSums(CBS1@assays$Spatial[mito.genes, ])/Matrix::colSums(CBS1@assays$Spatial)
+percent.ribo <- Matrix::colSums(CBS1@assays$Spatial[ribo.genes, ])/Matrix::colSums(CBS1@assays$Spatial)
+CBS1[['percent.mito']] <- percent.mito
+CBS1[['percent.ribo']] <- percent.ribo
+CBS1[['dropouts']] <- dropouts
+
+VlnPlot(CBS1, features = c("nFeature_Spatial", "nCount_Spatial","dropouts","percent.ribo","percent.mito"), ncol=5, cols = "lightsteelblue3") + ggtitle("CBS1")
+
+```
+
+# SCTransform normalization and clustering
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+CBS1 <- SCTransform(CBS1, assay = "Spatial", verbose = FALSE)
+CBS1 <- RunPCA(CBS1, assay = "SCT", verbose = FALSE)
+CBS1 <- RunUMAP(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindNeighbors(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindClusters(CBS1, verbose = FALSE, resolution = 0.5)
+
+DimPlot(CBS1, reduction = "umap", label = TRUE) + ggtitle("CBS1")
+SpatialDimPlot(CBS1, label = TRUE, label.size = 3, pt.size.factor = 2) + ggtitle("CBS1")
+
+```
+
+# Clusters re-labelling
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+#new.cluster.ids <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area", "CA1/CA2", "Isocortex-2", "Thalamus", "Hypothalamus", "CA3", "DG", "Outside")
+
+new.cluster.ids <- c("Midbrain","Isocortex-1","Hippocampus area","Isocortex-2","Hippocampus area","Olfactory area","Fiber tracts", "Hypothalamus", "CA1/CA2", "Retrosplenial area", "Thalamus", "CA3", "DG", "Outside", "CA1/CA2")
+
+names(x = new.cluster.ids) <- levels(x = CBS1)
+CBS1 <- RenameIdents(object = CBS1, new.cluster.ids)
+
+my_levels <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG","Outside")
+# Relevel object@ident
+CBS1@active.ident <- factor(x = CBS1@active.ident, levels = my_levels)
+
+SpatialDimPlot(CBS1, label = TRUE, label.size = 3, pt.size.factor =1.6) + ggtitle("CBS1")
+
+```
+
+# Gene Markers Heatmap
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=10, fig.width=10 }
+
+DefaultAssay(object = CBS1) <- "Spatial"
+CBS1 <- NormalizeData(CBS1)
+CBS1 <- ScaleData(CBS1)
+markers <- FindAllMarkers(object = CBS1, only.pos = TRUE)
+top <- markers %>% group_by(cluster) %>% top_n(5, avg_log2FC)
+DoHeatmap(CBS1, features=top$gene, size=3.5)
+write.table(markers, file="./output/CBS1.markers.csv", sep=",")
+
+```
+
+# Correlation between clusters
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+CBS1@meta.data$ClusterName <- CBS1@active.ident
+
+mnmat <- c()
+uniq <- unique(CBS1@active.ident)
+for(i in 1:length(uniq)){
+  mnmat <- cbind(mnmat, apply(as.matrix(CBS1@assays$SCT@data[, CBS1@meta.data$ClusterName==uniq[i]]), 1, mean))
+}
+
+colnames(mnmat) <- as.vector(unique(CBS1@active.ident))
+ct=cor(mnmat)
+pheatmap(ct)
+
+saveRDS(CBS1, "./output/CBS1.rds")
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

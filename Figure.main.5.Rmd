@@ -1,0 +1,811 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00-common.import.R")
+
+MOB <- readRDS("output/MOB.nanopore.deconv.rds")
+CBS1 <- readRDS("output/CBS1.nanopore.deconv.rds")
+CBS2 <- readRDS("output/CBS2.nanopore.deconv.rds")
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+```
+
+# Add CBS2 Illumina editing calling
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+all = read.delim("data/CBS2.snp5817.illumina_snpmatrix.csv", sep=",", stringsAsFactors = F)
+data = all[,4:ncol(all)]
+dim(data)
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) = paste(all$geneId, all$transcriptId, sep=":")
+vect <- colnames(CBS2@assays$Spatial)
+#idx <- grep("intergenic", rownames(data), invert = TRUE)
+#data <- data[idx,vect]
+#idx <- grep("Rik", rownames(data), invert = TRUE)
+data <- data[,vect]
+idx1 <- grep("\\.\\.A", rownames(data))
+idx2 <- grep("\\.\\.G", rownames(data))
+data <- data[c(idx1,idx2),]
+dim(data)
+
+x <- unique(sapply(strsplit(rownames(data), "\\.\\."), `[`, 1))
+countA <- data[grep("\\.\\.A",rownames(data)),]
+colnames(countA) <- colnames(data)
+rownames(countA) <- x
+countG <- data[grep("\\.\\.G",rownames(data)),]
+colnames(countG) <- colnames(data)
+rownames(countG) <- x
+ratio <- countG/(countA+countG)
+
+CBS2[['AtoIllu_A']] <- Matrix::colSums(countA)
+CBS2[['AtoIllu_G']] <- Matrix::colSums(countG)
+CBS2[['AtoIllu_total']] <- CBS2[['AtoIllu_A']]+CBS2[['AtoIllu_G']]
+CBS2[['AtoIllu_ratio']] <- CBS2[['AtoIllu_G']]/CBS2[['AtoIllu_total']]
+CBS2[['AtoIllu_detected']] <- Matrix::colSums(countG > 0)
+
+CBS2[["AtoIllu"]] <- CreateAssayObject(counts = countA)
+CBS2 <- SetAssayData(CBS2, slot = "data", as.matrix(countG), assay = "AtoIllu")
+CBS2 <- SetAssayData(CBS2, slot = "scale.data", as.matrix(ratio), assay = "AtoIllu")
+
+nano <- as.data.frame(cbind(Matrix::rowSums(CBS2@assays$AtoI@counts),Matrix::rowSums(CBS2@assays$AtoI@data)))
+colnames(nano) <- c("nano.A","nano.G")
+nano$nano.total <- nano$nano.A + nano$nano.G
+nano$nano.editing <- nano$nano.G/(nano$nano.A+nano$nano.G)
+
+illu <- as.data.frame(cbind(Matrix::rowSums(CBS2@assays$AtoIllu@counts),Matrix::rowSums(CBS2@assays$AtoIllu@data)))
+colnames(illu) <- c("illu.A","illu.G")
+illu$illu.total <- illu$illu.A + illu$illu.G
+illu$illu.editing <- illu$illu.G/(illu$illu.A+illu$illu.G)
+
+dd <- merge(nano,illu, by=0, all=TRUE)
+dd[is.na(dd)] <- 0
+head(dd)
+
+nano.cbs1 <- as.data.frame(cbind(Matrix::rowSums(CBS1@assays$AtoI@counts),Matrix::rowSums(CBS1@assays$AtoI@data)))
+colnames(nano.cbs1) <- c("nano.cbs1.A","nano.cbs1.G")
+nano.cbs1$nano.cbs1.total <- nano.cbs1$nano.cbs1.A + nano.cbs1$nano.cbs1.G
+nano.cbs1$nano.cbs1.editing <- nano.cbs1$nano.cbs1.G/(nano.cbs1$nano.cbs1.A+nano.cbs1$nano.cbs1.G)
+
+rownames(dd) <- dd$Row.names
+dd <- dd[,-c(1)]
+dd2 <- merge(dd,nano.cbs1, by=0, all=TRUE)
+dd2[is.na(dd2)] <- 0
+head(dd2)
+rownames(dd2) <- dd2$Row.names
+dd2 <- dd2[,-c(1)]
+colnames(dd2) <- c("cbs2.A","cbs2.G","cbs2.depth","cbs2.ratio","illu.A","illu.G","illu.depth","illu.ratio","cbs1.A","cbs1.G","cbs1.depth","cbs1.ratio")
+head(dd2)
+
+dd2[grep("^Gria2", rownames(dd2)),]
+
+library(viridis)
+
+# correlation editing ratio CBS2 vs CBS1
+sub <- subset(dd2, dd2$cbs2.depth>19 & dd2$cbs1.depth>19)
+p1 <- ggplot(data=sub, aes(x=cbs1.ratio,y=cbs2.ratio)) + 
+  geom_point() + 
+  theme_minimal()
+dim(sub)
+cor.test(sub$cbs2.ratio,sub$cbs1.ratio, method="pearson")$estimate
+
+
+# correlation editing ratio CBS2 vs ILLUMINA
+sub <- subset(dd2, dd2$cbs2.depth>19 & dd2$illu.depth>19)
+p2 <- ggplot(data=sub, aes(x=illu.ratio,y=cbs2.ratio)) + 
+  geom_point() + 
+  theme_minimal()
+dim(sub)
+cor.test(sub$cbs2.ratio,sub$cbs1.ratio, method="pearson")$estimate
+
+# supplementary figure 12
+pdf("ggplot.editing.pdf", width=14, height=6, useDingbats=FALSE)
+plot_grid(p1,p2)
+dev.off()
+
+
+pdf("ggplot.editing.pdf", width=10, height=8, useDingbats=FALSE)
+ggplot(data=subset(dd, dd$nano.total>9 & dd$illu.total>9), aes(x=nano.editing,y=illu.editing, fill=log2(illu.total), size=log2(nano.total))) + 
+  geom_point(alpha=0.8, shape=21, color="black") + 
+  scale_size(range = c(.1, 5), name="log2(nano.total)") + 
+  theme_minimal()+
+  scale_fill_gradientn(colours = c("grey","red"))
+dev.off()
+
+x1 <- as.data.frame(table(dd$nano.total))
+x2 <- as.data.frame(table(dd$illu.total))
+x1$id <- "nanopore"
+x2$id <- "illumina"
+xx <- rbind(x1,x2)
+
+ggplot(xx, aes(x=Var1, y=Freq, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal() +
+    coord_cartesian(xlim=c(0,20))
+
+ggplot(data=dd, aes(x=nano.editing,y=illu.editing, fill=log10(nano.total), size=log10(illu.total))) + 
+  geom_point(alpha=0.5, shape=21, color="black") + 
+  theme_minimal() + 
+  scale_fill_gradientn(colours = c("grey","red"))
+
+dim(subset(dd, nano.total>0 & illu.total>0))
+
+p1 <- SpatialFeaturePlot(CBS2, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+p2 <- SpatialFeaturePlot(CBS2, features = c("AtoIllu_A","AtoIllu_G","AtoIllu_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+
+p4 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoIllu_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+
+p5 <- SpatialFeaturePlot(CBS1, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+
+p6 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+  
+pdf("spatial.editing.pdf", width=20, height=12, useDingbats=FALSE)
+plot_grid(p1,p3,p2,p4,p5,p6,ncol=2)
+dev.off()
+
+a <- aggregate(CBS2@meta.data$AtoI_A, list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@meta.data$AtoI_G, list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+```
+
+# 5d. Visualize editing sites expression colored by distance to 3p end
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+all = read.delim("data/editing.site.distance.3p.csv", sep=",", stringsAsFactors = F, header=F)
+all$Row.names<- paste0(all$V4,":",all$V1,":",all$V2,sep="")
+df <- merge(dd,all)
+df$dist3p <- "0-500"
+df[which(df$V5>2000),]$dist3p<-"2000+"
+df[which(df$V5<2000 & df$V5>1000),]$dist3p<-"1000-2000"
+df[which(df$V5>500 & df$V5<1000),]$dist3p<-"500-1000"
+
+df$dist3p.2 <- "0-500"
+df[which(df$V5>500),]$dist3p.2<-"500+"
+
+pdf("figures/Figure.main.5d.pdf", width=8, height=6, useDingbats=FALSE)
+ggplot(data=df, aes(x=nano.total,y=illu.total, fill=dist3p)) + 
+  geom_point(alpha=1, shape=21, size=3,color="black") + 
+  scale_x_continuous(trans = 'log10') + scale_y_continuous(trans = 'log10') + 
+  theme_minimal() +
+  scale_fill_manual(values = c( "#52854C", "#E69F00", "#FC4E07", "#C3D7A4")) + 
+  geom_text_repel(data=subset(df, df$illu.total > 10000), aes(label=Row.names), size=3) 
+
+#  geom_text_repel(data=subset(df, df$illu.total < 10 & nano.total > 100), aes(label=Row.names), size=3) 
+ # geom_text_repel(data=subset(df, df$V4 %in% c("Gria2","Blcap","Grik5","Calm1")), aes(label=Row.names), size=3)
+#  geom_text_repel(data=subset(df, df$V4 %in% c("Gnas")), aes(label=Row.names), size=3) +
+#  geom_point(data=subset(df, df$V4 %in% c("Gnas")), col="red")
+  geom_text_repel(data=subset(df, df$V4 %in% c("Scn1b")), aes(label=Row.names), size=3) +
+  geom_point(data=subset(df, df$V4 %in% c("Scn1b")), col="red")
+  #geom_point(data=subset(df, df$V4 %in% c("Gria2","Blcap","Grik5","Calm1")), col="red")
+dev.off()
+
+DefaultAssay(CBS2) <- "AtoI"
+SpatialFeaturePlot(CBS2, features=c("Gria2:3:80692286", "Gria2:3:80706912"), slot="scale.data", ncol = 2)
+SpatialFeaturePlot(CBS2, features=df[grep("^Grik5", df$V4),]$Row.names, slot="scale.data", ncol = 3)
+SpatialFeaturePlot(CBS2, features=df[grep("^Blcap", df$V4),]$Row.names, slot="scale.data", ncol = 2)
+SpatialFeaturePlot(CBS2, features=df[grep("^Tmem63b", df$V4),]$Row.names, slot="scale.data", ncol = 2)
+                   
+ggplot(data=df, aes(x=nano.total,y=illu.total, fill=dist3p.2, size=nano.editing)) + 
+  geom_point(alpha=1, shape=21, size=3,color="black") + 
+  scale_size(range = c(.1, 200), name="nano.editing") + 
+  scale_x_continuous(trans = 'log10') + scale_y_continuous(trans = 'log10') + 
+  theme_minimal() +
+  scale_fill_manual(values = c( "#52854C","#FC4E07"))
+
+agg <- setNames(aggregate(list(df$dist3p,df$nCount_RNA), by = list(Category=filt@meta.data$celltype), sum), c("cluster","ACE2","UMIs"))
+
+df$nano.range <- "0-5"
+df[which(df$nano.total>5),]$nano.range<-"6-50"
+df[which(df$nano.total>50 & df$nano.total<=500),]$nano.range<-"51-500"
+df[which(df$nano.total>501),]$nano.range<-"501+"
+
+df$illu.range <- "0-5"
+df[which(df$illu.total>5),]$illu.range<-"6-50"
+df[which(df$illu.total>50 & df$illu.total<=500),]$illu.range<-"51-500"
+df[which(df$illu.total>501),]$illu.range<-"501+"
+
+x <- as.data.frame(table(df[df$illu.total > 4,]$dist3p))
+x$seq <- "illumina"
+x2 <- as.data.frame(table(df[df$nano.total > 4,]$dist3p))
+x2$seq <- "Nanopore"
+
+xx <- rbind(x,x2)
+
+ggplot(xx, aes(x=Var1, y=Freq, fill=seq)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal() + scale_fill_manual(values = c( "#999999","#0072B2"))
+
+
+```
+
+# Gnas focus
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+gene <- "Gnas:2:174327901"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene), rownames(CBS2@assays$AtoI@counts))])
+a <- aggregate(CBS2@assays$AtoI@counts[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@assays$AtoI@data[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+CBS2@meta.data$GnasAB <- 0
+for(i in 1:dim(all)[1]){
+  CBS2@meta.data[which(CBS2@meta.data$ClusterName == clusters[i]),]$GnasAB <- all[i,"ratio"]/100
+}
+p1 <- SpatialFeaturePlot(CBS2, "GnasAB")+ ggplot2::scale_fill_continuous(limits = c(0.0,0.5), breaks = c(0.0, 0.25, 0.50, 0.75, 1.0), type = "viridis")
+
+```
+
+# Gria2 focus
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+gene <- "Gria2:3:80692286"
+
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene), rownames(CBS2@assays$AtoI@counts))])
+a <- aggregate(CBS2@assays$AtoI@counts[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@assays$AtoI@data[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+CBS2@meta.data$Gria2RG <- 0
+for(i in 1:dim(all)[1]){
+  CBS2@meta.data[which(CBS2@meta.data$ClusterName == clusters[i]),]$Gria2RG <- all[i,"ratio"]/100
+}
+
+SpatialFeaturePlot(CBS2, "Gria2RG") + ggplot2::scale_fill_continuous(limits = c(0.0,1.0), type="heat.colors", breaks = c(0.0, 0.5, 1.0))
+
+
+gene <- "Gria2:3:80706912"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene), rownames(CBS2@assays$AtoI@counts))])
+a <- aggregate(CBS2@assays$AtoI@counts[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@assays$AtoI@data[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+CBS2@meta.data$Gria2QR <- 0
+for(i in 1:dim(all)[1]){
+  CBS2@meta.data[which(CBS2@meta.data$ClusterName == clusters[i]),]$Gria2QR <- all[i,"ratio"]/100
+}
+SpatialFeaturePlot(CBS2, "Gria2QR")+ ggplot2::scale_fill_continuous(limits = c(0.0,1.0), breaks = c(0.0, 0.25, 0.50, 0.75, 1.0), type = "viridis")
+
+```
+
+# Blcap focus
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+gene <- "Blcap:2:157558149"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene), rownames(CBS2@assays$AtoI@counts))])
+a <- aggregate(CBS2@assays$AtoI@counts[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@assays$AtoI@data[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+CBS2@meta.data$BlcapYC <- 0
+for(i in 1:dim(all)[1]){
+  CBS2@meta.data[which(CBS2@meta.data$ClusterName == clusters[i]),]$BlcapYC <- all[i,"ratio"]/100
+}
+p4 <- SpatialFeaturePlot(CBS2, "BlcapYC")+ ggplot2::scale_fill_continuous(limits = c(0.0,1.0), breaks = c(0.0, 0.25, 0.50, 0.75, 1.0), type = "viridis")
+
+
+```
+
+# Grik5 focus
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+gene <- "Grik5:7:25010650"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene), rownames(CBS2@assays$AtoI@counts))])
+a <- aggregate(CBS2@assays$AtoI@counts[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@assays$AtoI@data[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+CBS2@meta.data$Grik5QR <- 0
+for(i in 1:dim(all)[1]){
+  CBS2@meta.data[which(CBS2@meta.data$ClusterName == clusters[i]),]$Grik5QR <- all[i,"ratio"]/100
+}
+pdf("grik5.pdf", width=6, height=6, useDingbats=FALSE)
+SpatialFeaturePlot(CBS2, "Grik5QR")+ ggplot2::scale_fill_continuous(limits = c(0.0,1), breaks = c(0.0, 0.25, 0.50, 0.75, 1.0), type = "viridis")
+dev.off()
+
+
+```
+
+# Tmem63 focus
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+gene <- "Tmem63b:17:45662949"
+x <- unique(rownames(CBS2@assays$AtoI@counts)[grep(paste0("^",gene), rownames(CBS2@assays$AtoI@counts))])
+a <- aggregate(CBS2@assays$AtoI@counts[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@assays$AtoI@data[x,], list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+CBS2@meta.data$Tmem63bQR <- 0
+for(i in 1:dim(all)[1]){
+  CBS2@meta.data[which(CBS2@meta.data$ClusterName == clusters[i]),]$Tmem63bQR <- all[i,"ratio"]/100
+}
+SpatialFeaturePlot(CBS2, "Tmem63bQR")+ ggplot2::scale_fill_continuous(limits = c(0.0,1.0), breaks = c(0.0, 0.25, 0.50, 0.75, 1.0), type = "viridis")
+
+
+x <- unique(rownames(CBS2@assays$ISO@counts)[grep(paste0("^Tmem63b"), rownames(CBS2@assays$ISO@counts))])
+x
+SpatialFeaturePlot(CBS2, features="isog_Tmem63b")
+
+```
+
+# Editing statistics
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
+
+length(rownames(CBS2@assays$AtoI@counts))
+table(Matrix::rowSums(CBS2@assays$AtoI@data)>0)
+sum(CBS2[['AtoI_total']], na.rm=TRUE)
+sum(CBS2[['AtoI_G']], na.rm=TRUE)
+sum(CBS2[['AtoI_A']], na.rm=TRUE)
+100*sum(CBS2[['AtoI_G']], na.rm=TRUE)/sum(CBS2[['AtoI_total']], na.rm=TRUE)
+
+length(rownames(CBS2@assays$AtoIllu@counts))
+table(Matrix::rowSums(CBS2@assays$AtoIllu@data)>0)
+sum(CBS2[['AtoIllu_total']], na.rm=TRUE)
+sum(CBS2[['AtoIllu_G']], na.rm=TRUE)
+sum(CBS2[['AtoIllu_A']], na.rm=TRUE)
+100*sum(CBS2[['AtoIllu_G']], na.rm=TRUE)/sum(CBS2[['AtoIllu_total']], na.rm=TRUE)
+
+length(rownames(CBS1@assays$AtoI@counts))
+table(Matrix::rowSums(CBS1@assays$AtoI@data)>0)
+sum(CBS1[['AtoI_total']], na.rm=TRUE)
+sum(CBS1[['AtoI_G']], na.rm=TRUE)
+sum(CBS1[['AtoI_A']], na.rm=TRUE)
+100*sum(CBS1[['AtoI_G']], na.rm=TRUE)/sum(CBS1[['AtoI_total']], na.rm=TRUE)
+
+```
+
+# 5b
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+pdf("figures/Figure.main.5b.pdf", width=8, height=6, useDingbats=FALSE)
+SpatialFeaturePlot(CBS2, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+dev.off()
+
+col=ggplotColours(n = length(unique(CBS2@active.ident)))
+
+ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+
+tiff("figures/fig.2c.tif", units="in", width=8, height=6, res=300)
+ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+dev.off()
+
+ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_detected, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,50), breaks=seq(0,50,10), expand = c(0, 0))
+
+```
+
+# 5c
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+
+avg <- AverageExpression(object = MOB, return.seurat = TRUE, assay="Spatial", slot="data")
+
+pdf("figures/Figure.main.5c.pdf", width=8, height=6, useDingbats=FALSE)
+pheatmap(avg@assays$Spatial@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+dev.off()
+
+df <- data.frame()
+df <- as.data.frame(t(CBS2@assays$Spatial@scale.data["Adar",]))
+
+df <- as.data.frame(as.matrix(CBS2@assays$Spatial@scale.data[c("Adar","Adarb1","Adarb2"),]))
+df <- t(df)
+df$region <- CBS2@active.ident
+
+
+dim(df)
+
+df.molten <- melt(df, id.vars="id")
+
+a <- aggregate(CBS2@assays$Spatial@counts["Adar",], list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("region","Adar")
+b <- aggregate(CBS2@assays$Spatial@counts["Adarb1",], list(CBS2@meta.data$ClusterName), sum)
+colnames(b) <- c("region","Adarb1")
+c <- aggregate(CBS2@assays$Spatial@counts["Adarb2",], list(CBS2@meta.data$ClusterName), sum)
+colnames(c) <- c("region","Adarb2")
+
+a$Adarb1 <- b$Adarb1
+a$Adarb2 <- c$Adarb2
+a
+
+a <- aggregate(CBS1@assays$Spatial@counts["Adar",], list(CBS1@meta.data$ClusterName), sum)
+colnames(a) <- c("region","Adar")
+b <- aggregate(CBS1@assays$Spatial@counts["Adarb1",], list(CBS1@meta.data$ClusterName), sum)
+colnames(b) <- c("region","Adarb1")
+c <- aggregate(CBS1@assays$Spatial@counts["Adarb2",], list(CBS1@meta.data$ClusterName), sum)
+colnames(c) <- c("region","Adarb2")
+
+a$Adarb1 <- b$Adarb1
+a$Adarb2 <- c$Adarb2
+a
+
+a <- aggregate(MOB@assays$Spatial@counts["Adar",], list(MOB@meta.data$ClusterName), sum)
+colnames(a) <- c("region","Adar")
+b <- aggregate(MOB@assays$Spatial@counts["Adarb1",], list(MOB@meta.data$ClusterName), sum)
+colnames(b) <- c("region","Adarb1")
+c <- aggregate(MOB@assays$Spatial@counts["Adarb2",], list(MOB@meta.data$ClusterName), sum)
+colnames(c) <- c("region","Adarb2")
+
+a$Adarb1 <- b$Adarb1
+a$Adarb2 <- c$Adarb2
+a
+
+
+df <- as.data.frame(t(CBS2@assays$Spatial@counts[c("Adar","Adarb1","Adarb2"),]))
+df2 <- as.data.frame(CBS2@meta.data$AtoI_ratio)
+rownames(df2) <- rownames(CBS2@meta.data)
+df$ratio <- df2$`CBS2@meta.data$AtoI_ratio`
+
+ggplot(data=df, aes(x=ratio,y=Adarb1)) + 
+  geom_point(alpha=0.5, shape=21, color="black") + 
+  theme_minimal()
+
+#pdf("figures/fig2c.pdf", width=12, height=6, useDingbats=FALSE)
+#pheatmap(avg@assays$SCT@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+#dev.off()
+
+```
+
+# (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+CBS2[['SCTAdar']] <- CBS2@assays$SCT@data["Adar",]
+CBS2[['SCTAdarb1']] <- CBS2@assays$SCT@data["Adarb1",]
+CBS2[['SCTAdarb2']] <- CBS2@assays$SCT@data["Adarb2",]
+
+p1 <- ggplot(data=CBS2@meta.data, aes(x=SCTAdar,y=AtoI_ratio, group=SCTAdar))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.4))
+
+p2 <- ggplot(data=CBS2@meta.data, aes(x=SCTAdarb1,y=AtoI_ratio, group=SCTAdarb1))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.4))
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=SCTAdarb2,y=AtoI_ratio, group=SCTAdarb2))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1) +
+  scale_y_continuous(limits=c(0,0.4))
+
+plot_grid(p1,p2,p3,ncol=3)
+
+CBS2[['UMIAdar']] <- CBS2@assays$Spatial@counts["Adar",]
+CBS2[['UMIAdarb1']] <- CBS2@assays$Spatial@counts["Adarb1",]
+CBS2[['UMIAdarb2']] <- CBS2@assays$Spatial@counts["Adarb2",]
+
+p1 <- ggplot(data=CBS2@meta.data, aes(x=UMIAdar,y=AtoI_ratio, group=UMIAdar))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.35))
+
+p2 <- ggplot(data=CBS2@meta.data, aes(x=UMIAdarb1,y=AtoI_ratio, group=UMIAdarb1))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1)+
+  scale_y_continuous(limits=c(0,0.35))
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=UMIAdarb2,y=AtoI_ratio, group=UMIAdarb2))+
+  geom_boxplot(outlier.colour=NA, fill='#466cb9', color="black", lwd=0.1) +
+  scale_y_continuous(limits=c(0,0.35))
+
+plot_grid(p1,p2,p3,ncol=3)
+
+#tiff("figures/fig2d.tif", units="in", width=12, height=6, res=300)
+#plot_grid(p1,p2,p3,ncol=3)
+#dev.off()
+
+```
+
+# (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+  p1 <- CBS2@meta.data %>% 
+    ggplot(aes(x=factor(UMIAdar),y=AtoI_ratio, fill=ClusterName)) +
+    geom_boxplot() +
+    scale_y_continuous(limits=c(0,0.4)) +
+    geom_jitter(width=0.1,alpha=0.2) +
+    xlab("Adar")+ 
+    facet_wrap(~ClusterName,ncol = 4) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  p2 <- CBS2@meta.data %>% 
+    ggplot(aes(x=factor(UMIAdarb1),y=AtoI_ratio, fill=ClusterName)) +
+    geom_boxplot() +
+    scale_y_continuous(limits=c(0,0.4)) +
+    geom_jitter(width=0.1,alpha=0.2) +
+    xlab("Adarb1")+ 
+    facet_wrap(~ClusterName,ncol = 4) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  p3 <- CBS2@meta.data %>% 
+    ggplot(aes(x=factor(UMIAdarb2),y=AtoI_ratio, fill=ClusterName)) +
+    geom_boxplot() +
+    scale_y_continuous(limits=c(0,0.4)) +
+    geom_jitter(width=0.1,alpha=0.2) +
+    xlab("Adarb2")+ 
+    facet_wrap(~ClusterName,ncol = 4) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  #tiff("figures/fig2d.tif", units="in", width=20, height=6, res=300)
+  #plot_grid(p1,p2,p3,ncol=3)
+  #dev.off()
+
+```
+
+# (not retained)
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=12}
+
+all = read.delim("./nanopore/CBS2.snp100838.RN3.QV6_snpmatrix.csv", sep=",", stringsAsFactors = F)
+data = all[,4:ncol(all)]
+dim(data)
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) = paste(all$geneId, all$transcriptId, sep=":")
+vect <- colnames(CBS2@assays$Spatial)
+#idx <- grep("intergenic", rownames(data), invert = TRUE)
+#data <- data[idx,vect]
+#idx <- grep("Rik", rownames(data), invert = TRUE)
+data <- data[,vect]
+idx1 <- grep("\\.\\.A", rownames(data))
+idx2 <- grep("\\.\\.G", rownames(data))
+data <- data[c(idx1,idx2),]
+dim(data)
+
+x <- unique(sapply(strsplit(rownames(data), "\\.\\."), `[`, 1))
+countA <- data[grep("\\.\\.A",rownames(data)),]
+colnames(countA) <- colnames(data)
+rownames(countA) <- x
+countG <- data[grep("\\.\\.G",rownames(data)),]
+colnames(countG) <- colnames(data)
+rownames(countG) <- x
+
+countG <- countG[rowSums(countG)>49,]
+countA <- countA[rownames(countG),]
+dim(countA)
+dim(countG)
+
+CBS2[["AtoIhigh"]] <- CreateAssayObject(counts = countA)
+CBS2 <- SetAssayData(CBS2, slot = "data", as.matrix(countG), assay = "AtoIhigh")
+
+agg.A <- data.frame()
+for(i in 1:75){
+  t <- aggregate(CBS2@assays$AtoIhigh@counts[i,], list(CBS2@meta.data$ClusterName), sum)
+  agg.A <- rbind(agg.A,t$x)
+  print(i)
+}
+colnames(agg.A) <- unique(t$Group.1)
+rownames(agg.A) <- rownames(CBS2@assays$AtoIhigh@counts)
+
+agg.G <- data.frame()
+for(i in 1:75){
+  t <- aggregate(CBS2@assays$AtoIhigh@data[i,], list(CBS2@meta.data$ClusterName), sum)
+  agg.G <- rbind(agg.G,t$x)
+  print(i)
+}
+colnames(agg.G) <- unique(t$Group.1)
+rownames(agg.G) <- rownames(CBS2@assays$AtoIhigh@data)
+
+ratio <- agg.G/(agg.A+agg.G)
+ratio[is.na(ratio)] <- 0
+dim(ratio)
+
+pheatmap(as.matrix(ratio), cluster_rows=TRUE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+avg <- AverageExpression(object = CBS2, return.seurat = TRUE, assay="SCT")
+avg[["AtoIhigh"]] <- CreateAssayObject(counts = ratio)
+VlnPlot(avg,features="Calm1:12:100207186", slot="data",assay="AtoIhigh")
+VlnPlot(avg,features="Scn1b:7:31116973", slot="data",assay="AtoIhigh")
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Gria2", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Blcap", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Grik5", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+df <- as.data.frame(avg@assays$AtoIhigh@counts[rownames(ratio[grep("^Rpa1", rownames(ratio)),]),])
+df$id <- rownames(df)
+df.molten <- melt(df, id.vars="id")
+ggplot(df.molten, aes(x=variable, y=value, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal()
+
+#write.table(agg.A, file="CBS2.A.csv", sep=",")
+#write.table(agg.G, file="CBS2.G.csv", sep=",")
+#write.table(ratio, file="CBS2.R.csv", sep=",")
+
+```
+
+# Distinct number of editing sites detected as edited by at least one UMI (I)
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+p1 <- SpatialFeaturePlot(CBS2, features = "AtoI_detected", pt.size.factor=2, alpha = c(1, 1))
+p2 <- VlnPlot(CBS2,"AtoI_detected")
+p3 <- RidgePlot(CBS2, features = "AtoI_detected")
+
+plot_grid(p1,p2,p3,ncol=3)
+
+p1 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_A, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_A")
+
+p2 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_G, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_G")
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_ratio")
+
+p4 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName, y=AtoI_detected, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  #scale_y_continuous(limits=c(0,40), breaks=seq(0,40,10), expand = c(0, 0)) +
+  labs(title = "AI1886_detected")
+
+plot_grid(p1,p2,p3,p4,ncol=4)
+
+```
+
+# export tables
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+CBS2 <- readRDS("CBS2.rds")
+df <- data.frame()
+df <- data.frame(Matrix::rowSums(CBS2@assays$AtoI@counts), Matrix::rowSums(CBS2@assays$AtoI@data))
+colnames(df) <- c("A", "G")
+df$total <- df$A+df$G
+df$ratio <- df$G/df$total
+write.table(df, file="CBS2.AtoI.csv", sep=",")
+
+CBS1 <- readRDS("CBS1.rds")
+df <- data.frame()
+df <- data.frame(Matrix::rowSums(CBS1@assays$AtoI@counts), Matrix::rowSums(CBS1@assays$AtoI@data))
+colnames(df) <- c("A", "G")
+df$total <- df$A+df$G
+df$ratio <- df$G/df$total
+write.table(df, file="CBS1.AtoI.csv", sep=",")
+
+MOB <- readRDS("MOB.rds")
+df <- data.frame()
+df <- data.frame(Matrix::rowSums(MOB@assays$AtoI@counts), Matrix::rowSums(MOB@assays$AtoI@data))
+colnames(df) <- c("A", "G")
+df$total <- df$A+df$G
+df$ratio <- df$G/df$total
+write.table(df, file="MOB.AtoI.csv", sep=",")
+
+
+col=ggplotColours(n = 12)
+p1 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.5), breaks=seq(0,0.5,0.1), expand = c(0, 0)) + theme_minimal()
+
+col=ggplotColours(n = 13)
+p2 <- ggplot(data=CBS1@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.5), breaks=seq(0,0.5,0.1), expand = c(0, 0)) + theme_minimal()
+
+pdf("boxplot.CBS1-2.pdf", width=14, height=8, useDingbats=FALSE)
+plot_grid(p1,p2)
+dev.off()
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

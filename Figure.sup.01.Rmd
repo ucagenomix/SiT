@@ -1,0 +1,135 @@
+---
+title: "SiT - Supplementary Figure 1"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00-common.import.R")
+
+MOB <- readRDS("output/MOB.nanopore.deconv.rds")
+
+MOB <- SCTransform(MOB, assay = "Spatial", verbose = FALSE)
+MOB <- RunPCA(MOB, assay = "SCT", verbose = FALSE)
+MOB <- RunUMAP(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindNeighbors(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindClusters(MOB, verbose = FALSE, resolution = 0.4)
+pm1 <- SpatialDimPlot(MOB, pt.size.factor = 1.6) + ggtitle("MOB-Spatial")
+
+DefaultAssay(MOB) <- "ISOG"
+MOB <- SCTransform(MOB, assay = "ISOG", verbose = FALSE)
+MOB <- RunPCA(MOB, assay = "SCT", verbose = FALSE)
+MOB <- RunUMAP(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindNeighbors(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindClusters(MOB, verbose = FALSE, resolution = 0.4)
+pm2 <- SpatialDimPlot(MOB, pt.size.factor = 1.6) + ggtitle("MOB-ISOG")
+
+DefaultAssay(MOB) <- "ISO"
+MOB <- SCTransform(MOB, assay = "ISO", verbose = FALSE)
+MOB <- RunPCA(MOB, assay = "SCT", verbose = FALSE)
+MOB <- RunUMAP(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindNeighbors(MOB, reduction = "pca", dims = 1:30)
+MOB <- FindClusters(MOB, verbose = FALSE, resolution = 0.4)
+pm3 <- SpatialDimPlot(MOB, pt.size.factor = 1.6) + ggtitle("MOB-ISO")
+
+CBS1 <- readRDS("output/CBS1.nanopore.deconv.rds")
+
+CBS1 <- SCTransform(CBS1, assay = "Spatial", verbose = FALSE)
+CBS1 <- RunPCA(CBS1, assay = "SCT", verbose = FALSE)
+CBS1 <- RunUMAP(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindNeighbors(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindClusters(CBS1, verbose = FALSE, resolution = 0.4)
+c11 <- SpatialDimPlot(CBS1, pt.size.factor = 1.6) + ggtitle("CBS1-Spatial")
+
+DefaultAssay(CBS1) <- "ISOG"
+CBS1 <- SCTransform(CBS1, assay = "ISOG", verbose = FALSE)
+CBS1 <- RunPCA(CBS1, assay = "SCT", verbose = FALSE)
+CBS1 <- RunUMAP(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindNeighbors(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindClusters(CBS1, verbose = FALSE, resolution = 0.4)
+c12 <- SpatialDimPlot(CBS1, pt.size.factor = 1.6) + ggtitle("CBS1-ISOG")
+
+DefaultAssay(CBS1) <- "ISO"
+CBS1 <- SCTransform(CBS1, assay = "ISO", verbose = FALSE)
+CBS1 <- RunPCA(CBS1, assay = "SCT", verbose = FALSE)
+CBS1 <- RunUMAP(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindNeighbors(CBS1, reduction = "pca", dims = 1:30)
+CBS1 <- FindClusters(CBS1, verbose = FALSE, resolution = 0.4)
+c13 <- SpatialDimPlot(CBS1, pt.size.factor = 1.6) + ggtitle("CBS1-ISO")
+
+CBS2 <- readRDS("output/CBS2.nanopore.deconv.rds")
+
+CBS2 <- SCTransform(CBS2, assay = "Spatial", verbose = FALSE)
+CBS2 <- RunPCA(CBS2, assay = "SCT", verbose = FALSE)
+CBS2 <- RunUMAP(CBS2, reduction = "pca", dims = 1:30)
+CBS2 <- FindNeighbors(CBS2, reduction = "pca", dims = 1:30)
+CBS2 <- FindClusters(CBS2, verbose = FALSE, resolution = 0.4)
+c21 <- SpatialDimPlot(CBS2, pt.size.factor = 1.6) + ggtitle("CBS2-Spatial")
+
+DefaultAssay(CBS2) <- "ISOG"
+CBS2 <- SCTransform(CBS2, assay = "ISOG", verbose = FALSE)
+CBS2 <- RunPCA(CBS2, assay = "SCT", verbose = FALSE)
+CBS2 <- RunUMAP(CBS2, reduction = "pca", dims = 1:30)
+CBS2 <- FindNeighbors(CBS2, reduction = "pca", dims = 1:30)
+CBS2 <- FindClusters(CBS2, verbose = FALSE, resolution = 0.4)
+c22 <- SpatialDimPlot(CBS2, pt.size.factor = 1.6) + ggtitle("CBS2-ISOG")
+
+DefaultAssay(CBS2) <- "ISO"
+CBS2 <- SCTransform(CBS2, assay = "ISO", verbose = FALSE)
+CBS2 <- RunPCA(CBS2, assay = "SCT", verbose = FALSE)
+CBS2 <- RunUMAP(CBS2, reduction = "pca", dims = 1:30)
+CBS2 <- FindNeighbors(CBS2, reduction = "pca", dims = 1:30)
+CBS2 <- FindClusters(CBS2, verbose = FALSE, resolution = 0.4)
+c23 <- SpatialDimPlot(CBS2, pt.size.factor = 1.6) + ggtitle("CBS2-ISO")
+
+pdf("figures/Figure.sup.01.pdf", width=14, height=12, useDingbats=FALSE)
+plot_grid(pm1,pm2,pm3,c11,c12,c13,c21,c22,c23, ncol=3)
+dev.off()
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

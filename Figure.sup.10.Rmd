@@ -1,0 +1,288 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00-common.import.R")
+
+CBS2 <- readRDS("output/CBS2.nanopore.deconv.rds")
+CBS1 <- readRDS("output/CBS1.nanopore.deconv.rds")
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+```
+
+# Gnas
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=10}
+
+gene <- "Gnas"
+x <- unique(rownames(CBS2@assays$ISO@scale.data)[grep(paste("^",gene,"\\.\\.",sep=""), rownames(CBS2@assays$ISO@scale.data))])
+DefaultAssay(object = CBS2) <- "ISO"
+DefaultAssay(object = CBS1) <- "ISO"
+x <- c("Gnas..ENSMUST00000109087.7","Gnas..ENSMUST00000109084.7","Gnas..ENSMUST00000156623.7")
+p1 <- SpatialFeaturePlot(CBS2, features = x, max.cutoff=3) + ggtitle("CBS2")
+p2 <- SpatialFeaturePlot(CBS1, features = x) + ggtitle("CBS1")
+
+pdf("figures/Figure.sup.10b.pdf", width=10, height=6, useDingbats=FALSE)
+plot_grid(p1,p2,ncol=1)
+dev.off()
+
+avg.iso.scale <- AverageExpression(CBS2, assay="ISO",return.seurat = TRUE, slot = "data")
+avg.spatial.scale <- AverageExpression(CBS2, assay="Spatial",return.seurat = TRUE, slot = "data")
+xxx <- rbind(avg.iso.scale@assays$ISO@data[x,],avg.spatial.scale@assays$Spatial@data[c("Gnas"),])
+pheatmap(xxx, cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8)
+
+```
+
+# Gnas barplot
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=10}
+
+library(gameofthrones)
+
+DefaultAssay(object = CBS2) <- "ISO"
+isoforms <- rownames(CBS2@assays$ISO@counts)[grep(paste("^Gnas\\.\\.",sep=""), rownames(CBS2@assays$ISO@counts))]
+only3 <- c("ENSMUST00000156623.7","ENSMUST00000109087.7","ENSMUST00000109084.7")
+clusters <- unique(CBS2@active.ident)
+df <- data.frame()
+for(i in 1:length(clusters)){
+    y <- Matrix::rowSums(CBS2@assays$ISO@counts[isoforms, WhichCells(CBS2, ident=clusters[i])])
+    df<-rbind(df,y)
+}
+
+colnames(df) <- str_replace(isoforms, "Gnas\\.\\.", "")
+rownames(df) <- paste0(clusters,":CBS2")
+df <- df[,only3]
+freq_table <- prop.table(as.matrix(df), 1)*100
+tmp <- melt(freq_table)
+names(tmp) <- c("clusters", "isoforms", "percentage")
+
+#corresp <- c("ENSMUST00000130761.7"="Gnas-214",
+#             "ENSMUST00000238660.1"="Gnas-228",
+#             "ENSMUST00000180362.7"="Gnas-222",
+#             "ENSMUST00000156623.7"="Gnas-221",
+#             "ENSMUST00000087871.10"="Gnas-202",
+#             "ENSMUST00000149016.8"="Gnas-219",
+#             "ENSMUST00000133356.7"="Gnas-217",
+#             "ENSMUST00000109096.8"="Gnas-211",
+#             "ENSMUST00000109087.7"="Gnas-208",
+#             "ENSMUST00000109084.7"="Gnas-206",
+#             "ENSMUST00000109083.1"="Gnas-205")
+
+corresp <- c(
+             "ENSMUST00000156623.7"="Gnas-221",
+             "ENSMUST00000109087.7"="Gnas-208",
+             "ENSMUST00000109084.7"="Gnas-206")
+
+tmp$ensembl <- corresp[tmp$isoforms]
+
+
+DefaultAssay(object = CBS1) <- "ISO"
+clusters <- unique(CBS1@active.ident)
+isoforms <- rownames(CBS1@assays$ISO@counts)[grep(paste("^Gnas\\.\\.",sep=""), rownames(CBS1@assays$ISO@counts))]
+only3 <- c("ENSMUST00000156623.7","ENSMUST00000109087.7","ENSMUST00000109084.7")
+df <- data.frame()
+for(i in 1:length(clusters)){
+    y <- Matrix::rowSums(CBS1@assays$ISO@counts[isoforms, WhichCells(CBS1, ident=clusters[i])])
+    df<-rbind(df,y)
+}
+
+colnames(df) <- str_replace(isoforms, "Gnas\\.\\.", "")
+rownames(df) <- paste0(clusters,":CBS1")
+df <- df[,only3]
+freq_table <- prop.table(as.matrix(df), 1)*100
+tmp2 <- melt(freq_table)
+names(tmp2) <- c("clusters", "isoforms", "percentage")
+tmp2$ensembl <- corresp[tmp2$isoforms]
+
+both <- rbind(tmp,tmp2)
+
+pdf("figures/Figure.sup.10c.pdf", width=10, height=6, useDingbats=FALSE)
+ggplot(both, aes(x=clusters, y=percentage, fill=ensembl)) + 
+      geom_bar(stat="identity") + 
+      theme_minimal() + 
+      coord_flip() + 
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      scale_fill_manual(values=c("#A00000","#EE9B00","#005F73")) +
+      #scale_fill_got(discrete = TRUE, option = "Daenerys") + 
+      ggtitle("Gnas isoforms expression")
+dev.off()
+
+```
+
+# Deconvolution using Zeisel et al., 2018
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+zeisel <- readRDS("zeisel.sub8k.rds")
+DimPlot(zeisel, label = TRUE)
+
+# Gnas expresser cell types
+a <- aggregate(zeisel@assays$RNA@counts["Gnas",], list(zeisel@meta.data$TaxonomyRank4), sum)
+a$nb <- as.data.frame(table(zeisel@meta.data$TaxonomyRank4))$Freq
+a$avg <- a$x/a$nb
+barplot(a$avg)
+gnas_cell_types <- as.character(a[a$avg>5,]$Group.1)
+gnas_cell_types <- str_replace_all(gnas_cell_types, " ", ".")
+gnas_cell_types <- str_replace_all(gnas_cell_types, "-", ".")
+
+#cluster_markers_all <- Seurat::FindAllMarkers(object = zeisel, 
+#                                              assay = "SCT",
+#                                              slot = "data",
+#                                              verbose = TRUE, 
+#                                              only.pos = TRUE)
+
+#set.seed(123)
+#spotlight_ls <- spotlight_deconvolution(
+#  se_sc = zeisel,
+#  counts_spatial = CBS2@assays$Spatial@counts,
+#  clust_vr = "ClusterName", # Variable in sc_seu containing the cell-type annotation
+#  cluster_markers = cluster_markers_all, # Dataframe with the marker genes
+#  cl_n = 100, # number of cells per cell type to use
+#  hvg = 3000, # Number of HVG to use
+#  ntop = NULL, # How many of the marker genes to use (by default all)
+#  transf = "uv", # Perform unit-variance scaling per cell and spot prior to factorzation and NLS
+#  method = "nsNMF", # Factorization method
+#  min_cont = 0 # Remove those cells contributing to a spot below a certain threshold 
+#)
+#saveRDS(object = spotlight_ls, file = here::here("spotlight_zeisel_ClusterName.rds"))
+
+spotlight_ls <- readRDS("spotlight_zeisel_TaxonomyRank4_CBS2.rds")
+
+nmf_mod <- spotlight_ls[[1]]
+decon_mtrx <- spotlight_ls[[2]]
+
+h <- NMF::coef(nmf_mod[[1]])
+rownames(h) <- paste("Topic", 1:nrow(h), sep = "_")
+topic_profile_plts <- SPOTlight::dot_plot_profiles_fun(
+  h = h,
+  train_cell_clust = nmf_mod[[2]])
+
+topic_profile_plts[[2]] + ggplot2::theme(
+  axis.text.x = ggplot2::element_text(angle = 90), 
+  axis.text = ggplot2::element_text(size = 12))
+
+topic_profile_plts[[1]] + theme(axis.text.x = element_text(angle = 90), 
+                                axis.text = element_text(size = 12))
+
+basis_spotlight <- data.frame(NMF::basis(nmf_mod[[1]]))
+
+colnames(basis_spotlight) <- unique(stringr::str_wrap(nmf_mod[[2]], width = 30))
+
+#######################################################
+# remove contributing cell types under 8% --> this is usefull for scatterpie spotligight plot not to have too many contributing cells
+# we could keep all contributions for latter correlation computation, tested, improve a bit but message is the same so keep that standard filtering
+# except for SiTx visualisation this gives much nicer representation
+#######################################################
+decon_mtrx_sub <- decon_mtrx[, colnames(decon_mtrx) != "res_ss"]
+#decon_mtrx_sub[decon_mtrx_sub < 0.08] <- 0
+decon_mtrx <- cbind(decon_mtrx_sub, "res_ss" = decon_mtrx[, "res_ss"])
+rownames(decon_mtrx) <- colnames(CBS2)
+
+decon_df <- decon_mtrx %>%
+  data.frame() %>%
+  tibble::rownames_to_column("barcodes")
+
+CBS2@meta.data <- CBS2@meta.data %>%
+  tibble::rownames_to_column("barcodes") %>%
+  dplyr::left_join(decon_df, by = "barcodes") %>%
+  tibble::column_to_rownames("barcodes")
+
+Seurat::SpatialFeaturePlot(
+  object = CBS2,
+  features = gnas_cell_types,
+  alpha = c(0.1, 1),
+  pt.size.factor = 2.5)
+
+SPOTlight::spatial_scatterpie(se_obj = CBS2,
+                              cell_types_all = gnas_cell_types,
+                              img_path = "/data/10x_data/10x_visium/illumina/CBS2/spatial/tissue_lowres_image.png",
+                              pie_scale = 0.5, scatterpie_alpha = 2)
+
+```
+
+# Gnas isoforms expression correlation
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+v <- numeric()
+v2 <- numeric()
+v3 <- numeric()
+for(i in 1:length(gnas_cell_types)){
+  x <- cor.test(CBS2@meta.data[,gnas_cell_types[i]],CBS2@assays$ISO@data["Gnas..ENSMUST00000156623.7",])$estimate
+  x2 <- cor.test(CBS2@meta.data[,gnas_cell_types[i]],CBS2@assays$ISO@data["Gnas..ENSMUST00000109087.7",])$estimate
+  x3 <- cor.test(CBS2@meta.data[,gnas_cell_types[i]],CBS2@assays$ISO@data["Gnas..ENSMUST00000109084.7",])$estimate
+  v <- c(v, x)
+  v2 <- c(v2, x2)
+  v3 <- c(v3, x3)
+}
+df <- as.data.frame(cbind(v,v2,v3))
+rownames(df) <- gnas_cell_types
+colnames(df) <- c("Gnas-221","Gnas-208","Gnas-206")
+df[is.na(df)] <- 0
+
+pheatmap(df, cluster_rows=TRUE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+
+df$id <- rownames(df)
+df <- melt(df,id.vars = "id")
+
+ggplot(data=df, aes(x=id, y=value, fill=variable)) +
+  geom_bar(stat="identity", position=position_dodge())+
+  #geom_text(aes(label=variable), vjust=1.6, color="white",
+  #          position = position_dodge(0.9), size=3.5)+
+  scale_fill_manual(values=c("#005F73", "#EE9B00","#A00000")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

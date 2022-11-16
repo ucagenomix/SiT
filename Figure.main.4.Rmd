@@ -1,0 +1,295 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00-common.import.R")
+
+CBS2 <- readRDS("output/CBS2.nanopore.deconv.rds")
+CBS1 <- readRDS("output/CBS1.nanopore.deconv.rds")
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+```
+
+# dotPlot
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+features <- c('Snap25','Cnih2','Gnas','Bin1','Caly','Dtnbp1','Aldoa')
+
+pdf("figures/Figure.main.4a.pdf", width=16, height=20, useDingbats=FALSE)
+
+DefaultAssay(object = CBS2) <- "SCT"
+print(DotPlot(object = CBS2, features = features, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "#ae2012")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))) # 
+
+DefaultAssay(object = CBS2) <- "ISOG"
+DotPlot(object = CBS2, features = features, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "#005f73")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+DefaultAssay(object = CBS2) <- "ISO"
+lst <- c("Snap25..ENSMUST00000028727.10","Snap25..ENSMUST00000110098.3","Cnih2..ENSMUST00000025805.7","Cnih2..ENSMUST00000235638.1","Gnas..ENSMUST00000156623.7","Gnas..ENSMUST00000109087.7","Gnas..ENSMUST00000109084.7","Bin1..ENSMUST00000025239.8","Bin1..ENSMUST00000234496.1","Caly..ENSMUST00000211283.1","Caly..ENSMUST00000211044.1","Dtnbp1..ENSMUST00000072329.14","Dtnbp1..ENSMUST00000222321.1","Aldoa..ENSMUST00000032934.11","Aldoa..ENSMUST00000106348.7")  
+DotPlot(object = CBS2, features = lst, scale=TRUE, scale.max = 100, scale.min = 0, col.min = -1, col.max = 2, cols = c("lightgrey", "#ee9b00")) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+dev.off()
+
+```
+
+# heatmap
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+library(viridis)
+
+cbs1 <- read.delim("data/DE.cbs1.txt", sep="\t", stringsAsFactors = F, header=F)
+cbs2 <- read.delim("data/DE.cbs2.txt", sep="\t", stringsAsFactors = F, header=F)
+colnames(cbs1) <- c("geneId","region.1","region.2")
+colnames(cbs2) <- c("geneId","region.1","region.2")
+
+#cbs1 %>% group_by(region.1,region.2) %>% summarize(across(geneId, n_distinct))
+#cbs2 %>% group_by(region.1,region.2) %>% summarize(across(geneId, n_distinct))
+
+x <- aggregate(. ~ region.1+region.2, cbs1, function(x) length(unique(x)))
+x$sample <- "CBS1"
+y <- aggregate(. ~ region.1+region.2, cbs2, function(x) length(unique(x)))
+y$sample <- "CBS2"
+
+x$region.1 <- factor(x$region.1, levels=(clusters))
+x$region.2 <- factor(x$region.2, levels=(clusters))
+y$region.1 <- factor(y$region.1, levels=(clusters))
+y$region.2 <- factor(y$region.2, levels=(clusters))
+
+colors <- c('#81b29a', '#f2cc8f', '#e07a5f') 
+
+p1 <- ggplot(x, aes(x = region.1, y = region.2, fill = geneId)) +
+  geom_tile() +
+  theme_minimal() + 
+  scale_fill_gradientn(colors = colors)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+p2 <- ggplot(y, aes(x = region.1, y = region.2, fill = geneId)) +
+  geom_tile(max=33) +
+  theme_minimal() + 
+  scale_fill_gradientn(colors = colors) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+pdf("figures/Figure.main.4b.pdf", width=10, height=6, useDingbats=FALSE)
+plot_grid(p1,p2)
+dev.off()
+
+```
+
+# Snap25
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+x <- unique(rownames(CBS2@assays$ISO@data)[grep(paste("^Snap25..",sep=""), rownames(CBS2@assays$ISO@data))])
+x <- c("Snap25..ENSMUST00000028727.10","Snap25..ENSMUST00000110098.3")
+DefaultAssay(CBS1) <- "ISO"
+DefaultAssay(CBS2) <- "ISO"
+p1 <- SpatialFeaturePlot(CBS1, features = x, pt.size.factor=1.5, alpha = c(1, 1), max.cutoff = c(3.5,3.5))
+p2 <- SpatialFeaturePlot(CBS2, features = x, pt.size.factor=1.5, alpha = c(1, 1), max.cutoff = c(3.5,3.5))
+
+
+pdf("figures/Figure.main.4d.pdf", width=12, height=12, useDingbats=FALSE)
+plot_grid(p1,p2,ncol=1)
+dev.off()
+
+a.2 <- aggregate(CBS2@assays$ISO@counts["Snap25..ENSMUST00000028727.10",], list(CBS2@active.ident), sum)
+b.2 <- aggregate(CBS2@assays$ISO@counts["Snap25..ENSMUST00000110098.3",], list(CBS2@active.ident), sum)
+a.1 <- aggregate(CBS1@assays$ISO@counts["Snap25..ENSMUST00000028727.10",], list(CBS1@active.ident), sum)
+b.1 <- aggregate(CBS1@assays$ISO@counts["Snap25..ENSMUST00000110098.3",], list(CBS1@active.ident), sum)
+a.1 <- a.1[-c(13),]
+b.1 <- b.1[-c(13),]
+
+snap25 <- cbind(a.1,b.1$x,a.2$x,b.2$x)
+colnames(snap25) <- c("region","CBS1.201","CBS1.202","CBS2.201","CBS2.202")
+snap25$CBS1.ratio <- (100*snap25$CBS1.202)/(snap25$CBS1.202+snap25$CBS1.201)
+snap25$CBS2.ratio <- (100*snap25$CBS2.202)/(snap25$CBS2.202+snap25$CBS2.201)
+
+snap25 <- snap25[,c("region","CBS1.ratio","CBS2.ratio")]
+
+df <- melt(snap25, id.vars="region")
+
+pdf("figures/Figure.main.4e.pdf", width=10, height=6, useDingbats=FALSE)
+ggplot(df, aes(x=region, y=value, fill=variable)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal() + coord_flip() + 
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    scale_fill_manual(values=c("#3D8EC7", "#194F97")) 
+dev.off()    
+
+
+library(plyr)
+
+setwd("/data/10x_data/10x_visium/000-github/000-publish")
+source("/data/10x_data/00.common.import.R")
+
+CBS2 <- readRDS("../output/CBS2.nanopore.rds")
+CBS1 <- readRDS("../output/CBS1.nanopore.rds")
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+iss1 = read.table("HP_1_1_reads.csv", header=TRUE, sep=",", na.strings="?")
+iss2 = read.table("HP_1_2_reads.csv", header=TRUE, sep=",", na.strings="?")
+
+DefaultAssay(object = CBS1) <- "ISO"
+DefaultAssay(object = CBS2) <- "ISO"
+
+```
+
+# SiT
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+mygene <- c("Snap25","Cnih2","Gnas","Bin1","Caly","Dtnbp1","Aldoa")
+
+sit_gene_1 <- c("Snap25..ENSMUST00000028727.10","Cnih2..ENSMUST00000025805.7","Gnas..ENSMUST00000109087.7","Bin1..ENSMUST00000025239.8","Caly..ENSMUST00000211044.1","Dtnbp1..ENSMUST00000072329.14","Aldoa..ENSMUST00000032934.11")
+sit_gene_2 <- c("Snap25..ENSMUST00000110098.3","Cnih2..ENSMUST00000235638.1","Gnas..ENSMUST00000156623.7","Bin1..ENSMUST00000234496.1","Caly..ENSMUST00000211283.1","Dtnbp1..ENSMUST00000222321.1","Aldoa..ENSMUST00000106348.7")
+
+iss_probe_1 <- c("Snap25-201_junction4-5","Cnih2-201_junction2-3","Gnas-208_junction1-2","Bin1-201_exon7","Caly-203_junction1-2","Dtnb1-201_junction7-8","Aldoa-201_junction1-2")
+iss_probe_2 <- c("Snap25-202_junction4-5","Cnih2-202_junction2-3","Gnas-221_exon1","Bin1-205_junction10-11","Caly-204_exon1","Dtnb1-206_junction1-2","Aldoa-203_junction1-2")
+
+final <- data.frame()
+for(i in 1:length(sit_gene_1)){
+    print(sit_gene_1[i])
+  
+    a.2 <- aggregate(CBS2@assays$ISO@counts[sit_gene_1[i],], list(CBS2@active.ident), sum)
+    b.2 <- aggregate(CBS2@assays$ISO@counts[sit_gene_2[i],], list(CBS2@active.ident), sum)
+    a.1 <- aggregate(CBS1@assays$ISO@counts[sit_gene_1[i],], list(CBS1@active.ident), sum)
+    b.1 <- aggregate(CBS1@assays$ISO@counts[sit_gene_2[i],], list(CBS1@active.ident), sum)
+    a.1 <- a.1[-c(13),]
+    b.1 <- b.1[-c(13),]
+    
+    snap25_sit <- cbind(a.1,b.1$x,a.2$x,b.2$x)
+    colnames(snap25_sit) <- c("region","SIT.CBS1.201","SIT.CBS1.202","SIT.CBS2.201","SIT.CBS2.202")
+    rownames(snap25_sit) <- snap25_sit$region
+    snap25_sit <- snap25_sit[,-c(1)]
+    snap25_sit$SIT.CBS1.ratio <- (100*snap25_sit$SIT.CBS1.202)/(snap25_sit$SIT.CBS1.202+snap25_sit$SIT.CBS1.201)
+    snap25_sit$SIT.CBS2.ratio <- (100*snap25_sit$SIT.CBS2.202)/(snap25_sit$SIT.CBS2.202+snap25_sit$SIT.CBS2.201)
+    #snap25_sit
+    
+    iss1_201 <- iss1[iss1$gene == iss_probe_1[i],]
+    iss1_202 <- iss1[iss1$gene == iss_probe_2[i],]
+    iss2_201 <- iss2[iss2$gene == iss_probe_1[i],]
+    iss2_202 <- iss2[iss2$gene == iss_probe_2[i],]
+    
+    #iss1_201 <- iss1[iss1$gene == "Snap25-201_exon5",]
+    #iss1_202 <- iss1[iss1$gene == "Snap25-202_exon5",]
+    #iss2_201 <- iss2[iss2$gene == "Snap25-201_exon5",]
+    #iss2_202 <- iss2[iss2$gene == "Snap25-202_exon5",]
+    
+    iss1_snap25_201 <- count(iss1_201, "regionName")
+    colnames(iss1_snap25_201) <- c("region","snap25_201")
+    iss1_snap25_201 <- rbind(iss1_snap25_201, c("Fiber tracts", as.numeric(iss1_snap25_201[iss1_snap25_201$region  == "Fiber tracts1",]$snap25_201) + as.numeric(iss1_snap25_201[iss1_snap25_201$region  == "Fiber tracts2",]$snap25_201)))
+    iss1_snap25_201 <- iss1_snap25_201[-c(4,5),]
+    rownames(iss1_snap25_201) <- iss1_snap25_201$region
+    
+    iss1_snap25_202 <- count(iss1_202, "regionName")
+    colnames(iss1_snap25_202) <- c("region","snap25_202")
+    iss1_snap25_202 <- rbind(iss1_snap25_202, c("Fiber tracts", as.numeric(iss1_snap25_202[iss1_snap25_202$region  == "Fiber tracts1",]$snap25_202) + as.numeric(iss1_snap25_202[iss1_snap25_202$region  == "Fiber tracts2",]$snap25_202)))
+    iss1_snap25_202 <- iss1_snap25_202[-c(4,5),]
+    rownames(iss1_snap25_202) <- iss1_snap25_202$region
+    
+    iss1_tomerge <- merge(iss1_snap25_201,iss1_snap25_202, by=0, all=TRUE)
+    
+    iss2_snap25_201 <- count(iss2_201, "regionName")
+    colnames(iss2_snap25_201) <- c("region","snap25_201")
+    rownames(iss2_snap25_201) <- iss2_snap25_201$region
+    iss2_snap25_202 <- count(iss2_202, "regionName")
+    colnames(iss2_snap25_202) <- c("region","snap25_202")
+    rownames(iss2_snap25_202) <- iss2_snap25_202$region
+    
+    iss2_tomerge <- merge(iss2_snap25_201,iss2_snap25_202, by=0, all=TRUE)
+    
+    snap25_iss <- merge(iss1_tomerge, iss2_tomerge, by=0, all=TRUE)
+    rownames(snap25_iss) <-  snap25_iss$Row.names.x
+    snap25_iss <- snap25_iss[,-c(1,2,3,5,7,8,10)]
+    colnames(snap25_iss) <- c("ISS.CBS1.201","ISS.CBS1.202","ISS.CBS2.201","ISS.CBS2.202")
+    
+    rownames(snap25_iss)[rownames(snap25_iss) == "Isocortex1"] <- "Isocortex-1"
+    rownames(snap25_iss)[rownames(snap25_iss) == "Isocortex2"] <- "Isocortex-2"
+    
+    snap25 <- merge(snap25_iss,snap25_sit, by=0, all=TRUE)
+    
+    snap25$ISS.CBS1.ratio <- (100*as.numeric(snap25$ISS.CBS1.202))/(as.numeric(snap25$ISS.CBS1.202)+as.numeric(snap25$ISS.CBS1.201))
+    snap25$ISS.CBS2.ratio <- (100*as.numeric(snap25$ISS.CBS2.202))/(as.numeric(snap25$ISS.CBS2.202)+as.numeric(snap25$ISS.CBS2.201))
+    
+    snap25 <- snap25[,c("Row.names","SIT.CBS1.ratio","SIT.CBS2.ratio","ISS.CBS1.ratio","ISS.CBS2.ratio")]
+    df <- melt(snap25, id.vars="Row.names")
+    colnames(df) <- c("region","slice","value")
+    df$value <- as.numeric(df$value)
+    df$slice <- as.character(df$slice)
+    df$region <- as.character(df$region)
+    
+    pdf(paste0(mygene[i],".barplot.pdf"), width=10, height=6, useDingbats=FALSE)
+    
+    p1 <- ggplot(df, aes(x=region, y=value, fill=slice)) +
+        geom_bar(stat='identity', position='dodge') +
+        theme_minimal() + coord_flip() + 
+        theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+        scale_fill_manual(values=c("#d62828","#f77f00","#3D8EC7", "#194F97")) 
+    
+    print(p1 + ggtitle(sit_gene_1[i]))
+    dev.off()
+    
+    for(j in 1:12){
+      final <- rbind(final, data.frame(mygene[i], snap25[j,]$Row.names, mean(as.numeric(snap25[j,c("SIT.CBS1.ratio","SIT.CBS2.ratio")])), mean(as.numeric(snap25[j,c("ISS.CBS1.ratio","ISS.CBS2.ratio")]))))
+    }
+}
+
+colnames(final) <- c("gene","region","SiT","ISS")
+final
+
+pdf("facet.ISS.pdf", width=24, height=4, useDingbats=FALSE)
+ggplot(aes(x = SiT, y = ISS, color = gene), data = final) + geom_point() + geom_line() + facet_grid(~region) + coord_trans(x="log2", y="log2")
+dev.off()
+
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

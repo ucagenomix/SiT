@@ -1,0 +1,451 @@
+Clta	Midbrain	Hippocampus area
+S100a16	Midbrain	Hippocampus area
+Nbdy	Midbrain	Hippocampus area
+Rps24	Midbrain	Hippocampus area
+Sept5	Midbrain	Hippocampus area
+Ttyh1	Midbrain	Hippocampus area
+Tsc22d3	Midbrain	Hippocampus area
+Pnkd	Midbrain	Hippocampus area
+Cdc42	Midbrain	Hippocampus area
+Rab28	Midbrain	Hippocampus area
+Dctn6	Midbrain	Hippocampus area
+Dnal4	Midbrain	Hippocampus area
+Psme2	Midbrain	Hippocampus area
+Hspa5	Midbrain	Hippocampus area
+Rpn1	Midbrain	Hippocampus area
+Cnih2	Midbrain	Isocortex-1
+Rps6	Midbrain	Isocortex-1
+Rtn4	Midbrain	Isocortex-1
+Myl6	Midbrain	Isocortex-1
+Pcp4	Midbrain	Isocortex-1
+Clta	Midbrain	Isocortex-1
+Kctd17	Midbrain	Isocortex-1
+Arl2bp	Midbrain	Isocortex-1
+Sft2d1	Midbrain	Isocortex-1
+Nnat	Midbrain	Isocortex-1
+Capzb	Midbrain	Isocortex-1
+Vti1b	Midbrain	Isocortex-1
+Mrpl13	Midbrain	Isocortex-1
+Mrpl48	Midbrain	Isocortex-1
+Kctd13	Midbrain	Isocortex-1
+Cdc42	Midbrain	Isocortex-1
+Dnal4	Midbrain	Isocortex-1
+Stxbp1	Midbrain	Isocortex-1
+Rab6a	Midbrain	Isocortex-1
+Hnrnph2	Midbrain	Isocortex-1
+BC031181	Midbrain	Isocortex-1
+Rab28	Midbrain	Isocortex-1
+Caly	Midbrain	Isocortex-2
+Cnih2	Midbrain	Isocortex-2
+Rps6	Midbrain	Isocortex-2
+Mrpl48	Midbrain	Isocortex-2
+Dtnbp1	Midbrain	Isocortex-2
+Myl6	Midbrain	Isocortex-2
+Clta	Midbrain	Isocortex-2
+Nbdy	Midbrain	Isocortex-2
+Arl2bp	Midbrain	Isocortex-2
+Kctd17	Midbrain	Isocortex-2
+Sft2d1	Midbrain	Isocortex-2
+Atp5g1	Midbrain	Isocortex-2
+Rnf114	Midbrain	Isocortex-2
+Sept8	Midbrain	Isocortex-2
+Sept5	Midbrain	Olfactory area
+Rps6	Midbrain	Olfactory area
+Clta	Midbrain	Olfactory area
+Myl6	Midbrain	Olfactory area
+Dtnbp1	Midbrain	Olfactory area
+Nbdy	Midbrain	Olfactory area
+Arl2bp	Midbrain	Olfactory area
+Kctd17	Midbrain	Olfactory area
+Atp5g1	Midbrain	Olfactory area
+Faim	Midbrain	Olfactory area
+Capzb	Midbrain	Olfactory area
+Vti1b	Midbrain	Olfactory area
+Mrpl48	Midbrain	Olfactory area
+Sft2d1	Midbrain	Olfactory area
+Stxbp1	Midbrain	Olfactory area
+Rps24	Midbrain	Fiber tracts
+Cnih2	Midbrain	Fiber tracts
+Tsc22d3	Midbrain	Fiber tracts
+Rps11	Midbrain	Retrosplenial area
+Rps23	Midbrain	Retrosplenial area
+Sgk1	Midbrain	Retrosplenial area
+Rps6	Midbrain	CA1/CA2
+Myl6	Midbrain	CA1/CA2
+Clta	Midbrain	CA1/CA2
+Arl2bp	Midbrain	CA1/CA2
+Nkain4	Midbrain	CA1/CA2
+Kctd17	Midbrain	CA1/CA2
+Nbdy	Midbrain	CA1/CA2
+Mrpl48	Midbrain	CA1/CA2
+Sft2d1	Midbrain	CA1/CA2
+Faim	Midbrain	CA1/CA2
+Clta	Midbrain	Thalamus
+Nbdy	Midbrain	Thalamus
+Snap25	Midbrain	Hypothalamus
+Ap3s1	Midbrain	Hypothalamus
+Dtnbp1	Midbrain	Hypothalamus
+Hsd11b1	Midbrain	CA3
+Gabrg2	Midbrain	CA3
+Dtnbp1	Midbrain	CA3
+Arl2bp	Midbrain	CA3
+Mrpl48	Midbrain	CA3
+Nkain4	Midbrain	CA3
+Ftl1	Midbrain	CA3
+Rps6	Midbrain	CA3
+Gap43	Midbrain	CA3
+Sh3glb1	Midbrain	CA3
+Kctd17	Midbrain	CA3
+Slc3a2	Midbrain	CA3
+Zdhhc3	Midbrain	CA3
+Cbx5	Midbrain	CA3
+Il33	Midbrain	DG
+Kctd17	Midbrain	DG
+Arl2bp	Midbrain	DG
+Ngrn	Midbrain	DG
+Dda1	Midbrain	DG
+Nap1l4	Midbrain	DG
+Nptn	Midbrain	DG
+Nkain4	Midbrain	DG
+Nbdy	Midbrain	DG
+Myl6	Midbrain	DG
+Cnih1	Hippocampus area	Isocortex-1
+Hmgn2	Hippocampus area	Isocortex-1
+Cnih1	Hippocampus area	Isocortex-2
+Caly	Hippocampus area	Isocortex-2
+Dbndd2	Hippocampus area	Isocortex-2
+Rps6	Hippocampus area	Isocortex-2
+Arl2bp	Hippocampus area	Isocortex-2
+Rpn1	Hippocampus area	Isocortex-2
+Cspg5	Hippocampus area	Isocortex-2
+Dgcr6	Hippocampus area	Isocortex-2
+Dync1i1	Hippocampus area	Isocortex-2
+Sh3glb1	Hippocampus area	Isocortex-2
+Tmem147	Hippocampus area	Isocortex-2
+Gpm6b	Hippocampus area	Isocortex-2
+Fis1	Hippocampus area	Isocortex-2
+Rps6	Hippocampus area	Olfactory area
+Arl2bp	Hippocampus area	Olfactory area
+Dtnbp1	Hippocampus area	Olfactory area
+Ftl1	Hippocampus area	Olfactory area
+Dbndd2	Hippocampus area	Olfactory area
+Cuedc2	Hippocampus area	Olfactory area
+U2af1	Hippocampus area	Olfactory area
+1110065P20Rik	Hippocampus area	Olfactory area
+U2af1l4	Hippocampus area	Olfactory area
+S100a16	Hippocampus area	Fiber tracts
+Capzb	Hippocampus area	Fiber tracts
+Gnas	Hippocampus area	Fiber tracts
+Faim	Hippocampus area	Fiber tracts
+Clta	Hippocampus area	Fiber tracts
+Cltb	Hippocampus area	Fiber tracts
+Cdc42	Hippocampus area	Fiber tracts
+Dync1i1	Hippocampus area	Retrosplenial area
+Rpusd1	Hippocampus area	Retrosplenial area
+Cspg5	Hippocampus area	Retrosplenial area
+Hspa5	Hippocampus area	Retrosplenial area
+App	Hippocampus area	Retrosplenial area
+Pnkd	Hippocampus area	Retrosplenial area
+Golga7	Hippocampus area	Retrosplenial area
+Mob2	Hippocampus area	Retrosplenial area
+Rexo2	Hippocampus area	Retrosplenial area
+Rab28	Hippocampus area	Retrosplenial area
+Grcc10	Hippocampus area	Retrosplenial area
+Rpl5	Hippocampus area	Retrosplenial area
+Slc3a2	Hippocampus area	Retrosplenial area
+Rps11	Hippocampus area	Retrosplenial area
+Med7	Hippocampus area	Retrosplenial area
+Rps23	Hippocampus area	Retrosplenial area
+Mrps26	Hippocampus area	Retrosplenial area
+Cnih1	Hippocampus area	Retrosplenial area
+Fam173a	Hippocampus area	Retrosplenial area
+Abracl	Hippocampus area	Retrosplenial area
+Prpsap1	Hippocampus area	Retrosplenial area
+Gpx4	Hippocampus area	Retrosplenial area
+Pnkd	Hippocampus area	CA1/CA2
+Cnih1	Hippocampus area	CA1/CA2
+Arl2bp	Hippocampus area	CA1/CA2
+Lztr1	Hippocampus area	CA1/CA2
+Rpl10a	Hippocampus area	CA1/CA2
+Pfdn5	Hippocampus area	CA1/CA2
+Rpn1	Hippocampus area	CA1/CA2
+Rps24	Hippocampus area	CA1/CA2
+Tmem160	Hippocampus area	CA1/CA2
+Fkbp8	Hippocampus area	Thalamus
+Ahsa1	Hippocampus area	Thalamus
+Ap2m1	Hippocampus area	Thalamus
+Nbdy	Hippocampus area	Hypothalamus
+Sept5	Hippocampus area	Hypothalamus
+Ap3s1	Hippocampus area	Hypothalamus
+Myl6	Hippocampus area	Hypothalamus
+Lysmd2	Hippocampus area	Hypothalamus
+Rps24	Hippocampus area	Hypothalamus
+S100a16	Hippocampus area	Hypothalamus
+Trappc1	Hippocampus area	Hypothalamus
+Tsc22d3	Hippocampus area	Hypothalamus
+Dync1i1	Hippocampus area	Hypothalamus
+Dnal4	Hippocampus area	Hypothalamus
+Kctd13	Hippocampus area	Hypothalamus
+Acbd6	Hippocampus area	Hypothalamus
+Ensa	Hippocampus area	Hypothalamus
+Rpl10a	Hippocampus area	Hypothalamus
+Rpl21	Hippocampus area	Hypothalamus
+Rpn1	Hippocampus area	Hypothalamus
+Mrpl55	Hippocampus area	Hypothalamus
+Hsd11b1	Hippocampus area	CA3
+Dync1i1	Hippocampus area	CA3
+Hspa5	Hippocampus area	CA3
+Dtnbp1	Hippocampus area	CA3
+Arl2bp	Hippocampus area	CA3
+1110065P20Rik	Hippocampus area	CA3
+Sh3glb1	Hippocampus area	CA3
+Cnih1	Hippocampus area	CA3
+Gtf2a2	Hippocampus area	CA3
+Atp5o	Hippocampus area	CA3
+Nkain4	Hippocampus area	CA3
+Slc3a2	Hippocampus area	CA3
+Mboat7	Hippocampus area	CA3
+Rxrb	Hippocampus area	CA3
+Ftl1	Hippocampus area	CA3
+Rnaseh2c	Hippocampus area	CA3
+Dnajb4	Hippocampus area	CA3
+Arpp19	Hippocampus area	CA3
+Polr3h	Hippocampus area	CA3
+Stx8	Hippocampus area	CA3
+Rpl10a	Hippocampus area	CA3
+Bbip1	Hippocampus area	CA3
+Cox6c	Hippocampus area	CA3
+Hax1	Hippocampus area	CA3
+Caly	Hippocampus area	CA3
+Spcs1	Hippocampus area	CA3
+Ndufaf4	Hippocampus area	CA3
+Acbd6	Hippocampus area	CA3
+Commd4	Hippocampus area	CA3
+Ngrn	Hippocampus area	DG
+Caly	Hippocampus area	DG
+Hspa5	Hippocampus area	DG
+Dbndd2	Hippocampus area	DG
+Fopnl	Hippocampus area	DG
+Rpl13a	Hippocampus area	DG
+Fam173a	Hippocampus area	DG
+Polr2h	Hippocampus area	DG
+Cdc26	Hippocampus area	DG
+Mea1	Hippocampus area	DG
+Arl2bp	Hippocampus area	DG
+Rpl12	Hippocampus area	DG
+Tmem208	Hippocampus area	DG
+Nme3	Hippocampus area	DG
+Bscl2	Hippocampus area	DG
+Prdx6	Hippocampus area	DG
+Rpl10a	Hippocampus area	DG
+Fkbp8	Hippocampus area	DG
+Dda1	Hippocampus area	DG
+Snap25	Isocortex-1	Isocortex-2
+Caly	Isocortex-1	Isocortex-2
+Snca	Isocortex-1	Isocortex-2
+Ly6h	Isocortex-1	Olfactory area
+Sept5	Isocortex-1	Olfactory area
+Dtnbp1	Isocortex-1	Olfactory area
+Tpm1	Isocortex-1	Olfactory area
+Sft2d1	Isocortex-1	Fiber tracts
+Clta	Isocortex-1	Fiber tracts
+Rtn4	Isocortex-1	Fiber tracts
+Gnas	Isocortex-1	Fiber tracts
+Capzb	Isocortex-1	Fiber tracts
+Myl6	Isocortex-1	Fiber tracts
+Kctd13	Isocortex-1	Fiber tracts
+Faim	Isocortex-1	Fiber tracts
+Sept8	Isocortex-1	Fiber tracts
+Cltb	Isocortex-1	Fiber tracts
+Nnat	Isocortex-1	Fiber tracts
+Mff	Isocortex-1	Fiber tracts
+Psap	Isocortex-1	Fiber tracts
+Grcc10	Isocortex-1	Retrosplenial area
+Prpsap1	Isocortex-1	Retrosplenial area
+Sept5	Isocortex-1	Retrosplenial area
+Dync1i1	Isocortex-1	Retrosplenial area
+Nsf	Isocortex-1	Retrosplenial area
+Rpusd1	Isocortex-1	Retrosplenial area
+Ube2l3	Isocortex-1	Retrosplenial area
+Ntmt1	Isocortex-1	Retrosplenial area
+Ppp1r1a	Isocortex-1	CA1/CA2
+Ank	Isocortex-1	Thalamus
+Myl6	Isocortex-1	Hypothalamus
+Sept8	Isocortex-1	Hypothalamus
+Dctn6	Isocortex-1	Hypothalamus
+Rnf114	Isocortex-1	Hypothalamus
+Faim	Isocortex-1	Hypothalamus
+Rpl13a	Isocortex-1	Hypothalamus
+Dnal4	Isocortex-1	Hypothalamus
+Gpm6b	Isocortex-1	CA3
+Mob2	Isocortex-1	CA3
+Gap43	Isocortex-1	CA3
+Dtnbp1	Isocortex-1	CA3
+Nkain4	Isocortex-1	CA3
+Rnaseh2c	Isocortex-1	CA3
+Ssu72	Isocortex-1	CA3
+Rpp21	Isocortex-1	CA3
+Fam49b	Isocortex-1	CA3
+Arl2bp	Isocortex-1	CA3
+Stx8	Isocortex-1	CA3
+Hopx	Isocortex-1	CA3
+Ftl1	Isocortex-1	CA3
+Cfap20	Isocortex-1	CA3
+Mrpl30	Isocortex-1	CA3
+Bdnf	Isocortex-1	DG
+Ngrn	Isocortex-1	DG
+Dda1	Isocortex-1	DG
+Rpl13a	Isocortex-1	DG
+Polr2h	Isocortex-1	DG
+Snap25	Isocortex-2	Olfactory area
+Gnas	Isocortex-2	Fiber tracts
+Clta	Isocortex-2	Fiber tracts
+Rps6	Isocortex-2	Fiber tracts
+Myl6	Isocortex-2	Fiber tracts
+Mrpl48	Isocortex-2	Fiber tracts
+Sft2d1	Isocortex-2	Fiber tracts
+Arl2bp	Isocortex-2	Fiber tracts
+Kctd13	Isocortex-2	Fiber tracts
+Sept8	Isocortex-2	Fiber tracts
+Faim	Isocortex-2	Fiber tracts
+Sept5	Isocortex-2	Retrosplenial area
+Cck	Isocortex-2	Retrosplenial area
+Ptpn5	Isocortex-2	Retrosplenial area
+Caly	Isocortex-2	Thalamus
+Mrpl48	Isocortex-2	Thalamus
+Snap25	Isocortex-2	Hypothalamus
+Myl6	Isocortex-2	Hypothalamus
+Caly	Isocortex-2	Hypothalamus
+Dctn6	Isocortex-2	Hypothalamus
+Olfm2	Isocortex-2	Hypothalamus
+Mrpl48	Isocortex-2	Hypothalamus
+Rnf114	Isocortex-2	Hypothalamus
+Ndrg4	Isocortex-2	Hypothalamus
+Ndufs8	Isocortex-2	Hypothalamus
+Sept8	Isocortex-2	Hypothalamus
+Gpm6b	Isocortex-2	CA3
+Nkain4	Isocortex-2	CA3
+Fnta	Isocortex-2	CA3
+Gabrg2	Isocortex-2	CA3
+Tpgs1	Isocortex-2	CA3
+Gemin6	Isocortex-2	CA3
+Ppp3ca	Isocortex-2	DG
+Aldoa	Isocortex-2	DG
+Nae1	Isocortex-2	DG
+Clta	Olfactory area	Fiber tracts
+Gnas	Olfactory area	Fiber tracts
+Myl6	Olfactory area	Fiber tracts
+Rps6	Olfactory area	Fiber tracts
+Capzb	Olfactory area	Fiber tracts
+Sft2d1	Olfactory area	Fiber tracts
+Arl2bp	Olfactory area	Fiber tracts
+Faim	Olfactory area	Fiber tracts
+Kctd13	Olfactory area	Fiber tracts
+Sept5	Olfactory area	Retrosplenial area
+Sept5	Olfactory area	Hypothalamus
+Myl6	Olfactory area	Hypothalamus
+Rps24	Olfactory area	Hypothalamus
+Nbdy	Olfactory area	Hypothalamus
+Dctn6	Olfactory area	Hypothalamus
+Rnf114	Olfactory area	Hypothalamus
+Faim	Olfactory area	Hypothalamus
+Ptp4a3	Olfactory area	Hypothalamus
+Mob2	Olfactory area	CA3
+Gap43	Olfactory area	CA3
+Nkain4	Olfactory area	CA3
+Ngrn	Olfactory area	DG
+Morf4l2	Olfactory area	DG
+Dda1	Olfactory area	DG
+Hmgn2	Fiber tracts	Retrosplenial area
+Gpm6b	Fiber tracts	Retrosplenial area
+Sgk1	Fiber tracts	Retrosplenial area
+Rexo2	Fiber tracts	Retrosplenial area
+Gnas	Fiber tracts	CA1/CA2
+Myl6	Fiber tracts	CA1/CA2
+Clta	Fiber tracts	CA1/CA2
+Rps6	Fiber tracts	CA1/CA2
+Capzb	Fiber tracts	CA1/CA2
+Sft2d1	Fiber tracts	CA1/CA2
+Faim	Fiber tracts	CA1/CA2
+Arl2bp	Fiber tracts	CA1/CA2
+Gpm6b	Fiber tracts	CA1/CA2
+Nkain4	Fiber tracts	CA1/CA2
+Rps24	Fiber tracts	Hypothalamus
+Rcan2	Fiber tracts	Hypothalamus
+Tpd52	Fiber tracts	Hypothalamus
+Gpm6b	Fiber tracts	CA3
+Hsd11b1	Fiber tracts	CA3
+Arl2bp	Fiber tracts	CA3
+Nkain4	Fiber tracts	CA3
+Mob2	Fiber tracts	CA3
+Mrpl48	Fiber tracts	CA3
+Ftl1	Fiber tracts	CA3
+Rps6	Fiber tracts	CA3
+Hax1	Fiber tracts	CA3
+Rnaseh2c	Fiber tracts	CA3
+Bin1	Fiber tracts	CA3
+Slc3a2	Fiber tracts	CA3
+Hspa5	Fiber tracts	CA3
+Rpl23	Fiber tracts	CA3
+Gps1	Fiber tracts	CA3
+Ap2a1	Fiber tracts	CA3
+Psmd10	Fiber tracts	CA3
+Cox6c	Fiber tracts	CA3
+Anapc11	Fiber tracts	CA3
+Clta	Fiber tracts	DG
+Bin1	Fiber tracts	DG
+Gpm6b	Fiber tracts	DG
+Arl2bp	Fiber tracts	DG
+Il33	Fiber tracts	DG
+Gnas	Fiber tracts	DG
+Sept5	Retrosplenial area	CA1/CA2
+Tcf25	Retrosplenial area	Thalamus
+Dync1i1	Retrosplenial area	Thalamus
+App	Retrosplenial area	Thalamus
+Myl6	Retrosplenial area	Hypothalamus
+Dtnbp1	Retrosplenial area	CA3
+Sept5	Retrosplenial area	CA3
+Caly	Retrosplenial area	DG
+Polr2g	CA1/CA2	Thalamus
+Atp5g1	CA1/CA2	Thalamus
+Myl6	CA1/CA2	Hypothalamus
+Sept5	CA1/CA2	Hypothalamus
+Nbdy	CA1/CA2	Hypothalamus
+Gnas	CA1/CA2	Hypothalamus
+Dctn6	CA1/CA2	Hypothalamus
+Hsd11b1	CA1/CA2	CA3
+Ndrg4	CA1/CA2	DG
+Ppp3ca	CA1/CA2	DG
+Caly	CA1/CA2	DG
+Nbdy	Thalamus	Hypothalamus
+Snap25	Thalamus	Hypothalamus
+App	Thalamus	Hypothalamus
+Eno2	Thalamus	Hypothalamus
+Myl6	Thalamus	Hypothalamus
+Nkain4	Thalamus	CA3
+Arl2bp	Thalamus	CA3
+Mrpl48	Thalamus	CA3
+Rpl5	Thalamus	CA3
+Tcf25	Thalamus	CA3
+Hsd11b1	Thalamus	CA3
+App	Thalamus	CA3
+Anapc11	Thalamus	CA3
+Hspa5	Thalamus	CA3
+Polr2g	Thalamus	CA3
+Dync1i1	Thalamus	CA3
+Bax	Thalamus	CA3
+Cox6c	Thalamus	CA3
+Arpp19	Thalamus	CA3
+Caly	Thalamus	DG
+Hspa5	Thalamus	DG
+Nkain4	Hypothalamus	CA3
+Arl2bp	Hypothalamus	CA3
+Caly	Hypothalamus	CA3
+Myl6	Hypothalamus	CA3
+Caly	Hypothalamus	DG
+Nbdy	Hypothalamus	DG
+Myl6	Hypothalamus	DG
+Ngrn	Hypothalamus	DG
+Snap25	Hypothalamus	DG
+Hsd11b1	CA3	DG
+

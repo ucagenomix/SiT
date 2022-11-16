@@ -1,0 +1,236 @@
+---
+title: "SiT - Figures"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00-common.import.R")
+
+CBS2 <- readRDS("./output/CBS2.nanopore.rds")
+
+```
+
+# Integration of external data (Zeisel et al.)
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+zeisel <- readRDS("data/zeisel.sub8k.rds")
+DimPlot(zeisel, label = TRUE)
+
+#cluster_markers_all <- Seurat::FindAllMarkers(object = zeisel, 
+#                                              assay = "SCT",
+#                                              slot = "data",
+#                                              verbose = TRUE, 
+#                                              only.pos = TRUE)
+
+#saveRDS(object = cluster_markers_all, file = here::here("markers_zeisel_TaxonomyRank4.rds"))
+
+#cluster_markers_all <- readRDS("markers_zeisel_TaxonomyRank4.rds")
+
+#set.seed(123)
+#spotlight_ls <- spotlight_deconvolution(
+#  se_sc = zeisel,
+#  counts_spatial = CBS2@assays$Spatial@counts,
+#  clust_vr = "TaxonomyRank4", # Variable in sc_seu containing the cell-type annotation
+#  cluster_markers = cluster_markers_all, # Dataframe with the marker genes
+#  cl_n = 100, # number of cells per cell type to use
+#  hvg = 3000, # Number of HVG to use
+#  ntop = NULL, # How many of the marker genes to use (by default all)
+#  transf = "uv", # Perform unit-variance scaling per cell and spot prior to factorzation and NLS
+#  method = "nsNMF", # Factorization method
+#  min_cont = 0 # Remove those cells contributing to a spot below a certain threshold 
+#)
+#saveRDS(object = spotlight_ls, file = here::here("spotlight_zeisel_TaxonomyRank4_CBS2.rds"))
+
+spotlight_ls <- readRDS("spotlight_zeisel_TaxonomyRank4_CBS2.rds")
+
+nmf_mod <- spotlight_ls[[1]]
+decon_mtrx <- spotlight_ls[[2]]
+
+h <- NMF::coef(nmf_mod[[1]])
+rownames(h) <- paste("Topic", 1:nrow(h), sep = "_")
+topic_profile_plts <- SPOTlight::dot_plot_profiles_fun(
+  h = h,
+  train_cell_clust = nmf_mod[[2]])
+
+topic_profile_plts[[2]] + ggplot2::theme(
+  axis.text.x = ggplot2::element_text(angle = 90), 
+  axis.text = ggplot2::element_text(size = 12))
+
+topic_profile_plts[[1]] + theme(axis.text.x = element_text(angle = 90), 
+                                axis.text = element_text(size = 12))
+
+basis_spotlight <- data.frame(NMF::basis(nmf_mod[[1]]))
+
+colnames(basis_spotlight) <- unique(stringr::str_wrap(nmf_mod[[2]], width = 30))
+
+#######################################################
+# remove contributing cell types under 8% --> this is usefull for scatterpie spotligight plot not to have too many contributing cells
+# we could keep all contributions for latter correlation computation, tested, improve a bit but message is the same so keep that standard filtering
+# except for SiTx visualisation this gives much nicer representation
+#######################################################
+decon_mtrx_sub <- decon_mtrx[, colnames(decon_mtrx) != "res_ss"]
+decon_mtrx_sub[decon_mtrx_sub < 0.08] <- 0
+decon_mtrx <- cbind(decon_mtrx_sub, "res_ss" = decon_mtrx[, "res_ss"])
+rownames(decon_mtrx) <- colnames(CBS2)
+
+decon_df <- decon_mtrx %>%
+  data.frame() %>%
+  tibble::rownames_to_column("barcodes")
+
+CBS2@meta.data <- CBS2@meta.data %>%
+  tibble::rownames_to_column("barcodes") %>%
+  dplyr::left_join(decon_df, by = "barcodes") %>%
+  tibble::column_to_rownames("barcodes")
+
+#For SiTx
+#saveRDS(CBS2, "./output/CBS2.nanopore.deconv.rds")
+
+#Seurat::SpatialFeaturePlot(
+#  object = CBS2,
+#  features = c("Oligodendrocytes"),
+#  alpha = c(0.1, 1))
+
+cell_types_all <- colnames(decon_mtrx)[which(colnames(decon_mtrx) != "res_ss")]
+
+#pdf("spotlight.CBS2.pdf", width=16, height=12, useDingbats=FALSE)
+SPOTlight::spatial_scatterpie(se_obj = CBS2,
+                              cell_types_all = cell_types_all,
+                              img_path = "data/CBS2_tissue_lowres_image.png",
+                              pie_scale = 0.4)
+#dev.off()
+
+#pdf("spotlight.CBS2.pdf", width=16, height=12, useDingbats=FALSE)
+#SPOTlight::spatial_scatterpie(se_obj = CBS2,
+#                              cell_types_all = c("Oligodendrocytes","Microglia"),
+#                              img_path = "/data/10x_data/10x_visium/illumina/CBS2/spatial/tissue_lowres_image.png",
+#                              pie_scale = 0.4)
+#dev.off()
+
+int <- c("Oligodendrocytes","Peptidergic.neurons","Dentate.gyrus.granule.neurons","Dentate.gyrus.radial.glia.like.cells","Di..and.mesencephalon.excitatory.neurons","Subventricular.zone.radial.glia.like.cells","Telencephalon.projecting.excitatory.neurons")
+
+#pdf("spotlight.CBS2.alltype.pdf", width=32, height=8, useDingbats=FALSE)
+Seurat::SpatialFeaturePlot(
+  object = CBS2,
+  features = int,
+  alpha = c(0.1, 1))
+#dev.off()
+
+
+#SPOTlight::spatial_scatterpie(se_obj = CBS2,
+#                              cell_types_all = c("MyOligo","OPC","OEC1","OEC2","OEC3","OEC4","OEC5","N2"),
+#                              img_path = "/data/10x_data/10x_visium/illumina/CBS2/spatial/tissue_lowres_image.png",
+#                              pie_scale = 0.6)
+
+graph_ntw <- SPOTlight::get_spatial_interaction_graph(decon_mtrx = decon_mtrx[, cell_types_all])
+deg <- degree(graph_ntw, mode="all")
+# Get color palette for difusion
+edge_importance <- E(graph_ntw)$importance
+# Select a continuous palette
+qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'seq',]
+# Create a color palette
+getPalette <- colorRampPalette(brewer.pal(9, "YlOrRd"))
+# Get how many values we need
+grad_edge <- seq(0, max(edge_importance), 0.1)
+# Generate extended gradient palette dataframe
+graph_col_df <- data.frame(value = as.character(grad_edge),
+                           color = getPalette(length(grad_edge)),
+                           stringsAsFactors = FALSE)
+# Assign color to each edge
+color_edge <- data.frame(value = as.character(round(edge_importance, 1)), stringsAsFactors = FALSE) %>%
+  dplyr::left_join(graph_col_df, by = "value") %>%
+  dplyr::pull(color)
+# Open a pdf file
+plot(graph_ntw,
+     # Size of the edge
+     edge.width = edge_importance,
+     edge.color = color_edge,
+     # Size of the buble
+     vertex.size = deg,
+     vertex.color = "#cde394",
+     vertex.frame.color = "white",
+     vertex.label.color = "black",
+     vertex.label.family = "Ubuntu", # Font family of the label (e.g.“Times”, “Helvetica”)
+     layout = layout.circle)
+
+
+
+library(ggcorrplot)
+decon_mtrx_sub <- decon_mtrx[, cell_types_all]
+decon_mtrx_sub <- decon_mtrx_sub[, colSums(decon_mtrx_sub) > 0]
+
+# Compute correlation
+decon_cor <- cor(decon_mtrx_sub)
+
+# Compute correlation P-value
+p.mat <- corrplot::cor.mtest(mat = decon_mtrx_sub, conf.level = 0.95)
+
+# Visualize
+ggcorrplot::ggcorrplot(
+  corr = decon_cor,
+  p.mat = p.mat[[1]],
+  hc.order = TRUE,
+  type = "full",
+  insig = "blank",
+  lab = TRUE,
+  outline.col = "lightgrey",
+  method = "square",
+  # colors = c("#4477AA", "white", "#BB4444"))
+  colors = c("#6D9EC1", "white", "#E46726"),
+  title = "Predicted cell-cell proportion correlation",
+  legend.title = "Correlation\n(Pearson)") +
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(size = 22, hjust = 0.5, face = "bold"),
+    legend.text = ggplot2::element_text(size = 12),
+    legend.title = ggplot2::element_text(size = 15),
+    axis.text.x = ggplot2::element_text(angle = 90),
+    axis.text = ggplot2::element_text(size = 18, vjust = 0.5))
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

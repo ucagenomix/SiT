@@ -1,0 +1,167 @@
+---
+title: "SiT - CBS integration"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00-common.import.R")
+
+library(future)
+#plan("multiprocess", workers = 6)
+options(future.globals.maxSize = 20000 * 1024^2)
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+CBS1 <- readRDS("output/CBS1.nanopore.deconv.rds")
+CBS2 <- readRDS("output/CBS2.nanopore.deconv.rds")
+CBS1 <- subset(CBS1, ident = "Outside", invert=TRUE)
+CBS1 <- RenameCells(CBS1, add.cell.id = "CBS1")
+CBS2 <- RenameCells(CBS2, add.cell.id = "CBS2")
+CBS1[['section']] <- "CBS1"
+CBS2[['section']] <- "CBS2"
+sample.list <- c(CBS1, CBS2)
+
+st.list = list(CBS1 = CBS1, CBS2 = CBS2)
+st.list = lapply(st.list, SCTransform, assay = "Spatial", method = "poisson")
+
+st.features = SelectIntegrationFeatures(st.list, nfeatures = 3000, verbose = FALSE)
+st.list <- PrepSCTIntegration(object.list = st.list, anchor.features = st.features, verbose = FALSE)
+
+int.anchors <- FindIntegrationAnchors(object.list = st.list, normalization.method = "SCT", verbose = FALSE, anchor.features = st.features)
+integrated <- IntegrateData(anchorset = int.anchors, normalization.method = "SCT", verbose = FALSE)
+rm(int.anchors, st.list)
+gc()
+
+integrated <- RunPCA(integrated, verbose = FALSE)
+integrated <- FindNeighbors(integrated, dims = 1:30)
+integrated <- FindClusters(integrated, verbose = FALSE)
+integrated <- RunUMAP(integrated, dims = 1:30)
+
+DimPlot(integrated, reduction = "umap", group.by = c("ident", "ClusterName", "section"))
+SpatialDimPlot(integrated)
+
+integrated <- SetIdent(integrated, value="ClusterName")
+integrated@active.ident <- factor(x = integrated@active.ident, levels = clusters)
+SpatialDimPlot(integrated)
+
+saveRDS(integrated, "data/CBS.integrated.rds")
+
+```
+
+# Cluster correlation
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+mnmat <- c()
+uniq <- unique(paste0(integrated@meta.data$section,"_",integrated@meta.data$ClusterName))
+for(i in 1:length(uniq)){
+  mnmat <- cbind(mnmat, apply(as.matrix(integrated@assays$Spatial@data[, paste0(integrated@meta.data$section,"_",integrated@meta.data$ClusterName)==uniq[i]]), 1, mean))
+}
+
+df <- unique(integrated@meta.data[,c("section","ClusterName")])
+rownames(df) <- paste0(df$section,"_",df$ClusterName)
+df <- df[-c(2)]
+colnames(mnmat) <- uniq
+ct=cor(mnmat)
+pheatmap(ct, annotation_col=df, cluster_rows=TRUE, cluster_cols=TRUE, fontsize = 8, clustering_method = "complete")
+
+```
+
+\pagebreak
+# integration isoform-level
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=6, fig.width=12}
+st.list = list(CBS1 = CBS1, CBS2 = CBS2)
+st.list = lapply(st.list, SCTransform, assay = "ISO", method = "poisson")
+
+st.features = SelectIntegrationFeatures(st.list, nfeatures = 3000, verbose = FALSE)
+st.list <- PrepSCTIntegration(object.list = st.list, anchor.features = st.features, verbose = FALSE)
+
+int.anchors <- FindIntegrationAnchors(object.list = st.list, normalization.method = "SCT", verbose = FALSE, anchor.features = st.features)
+integrated.iso <- IntegrateData(anchorset = int.anchors, normalization.method = "SCT", verbose = FALSE)
+rm(int.anchors, st.list)
+gc()
+
+integrated.iso <- RunPCA(integrated.iso, verbose = FALSE)
+integrated.iso <- FindNeighbors(integrated.iso, dims = 1:30)
+integrated.iso <- FindClusters(integrated.iso, verbose = FALSE)
+integrated.iso <- RunUMAP(integrated.iso, dims = 1:30)
+
+integrated.iso <- SetIdent(integrated.iso, value="ClusterName")
+integrated.iso@active.ident <- factor(x = integrated.iso@active.ident, levels = clusters)
+
+pdf("figures/Figure.sup.08de.pdf", width=8, height=6, useDingbats=FALSE)
+DimPlot(integrated.iso, reduction = "umap", group.by = c("ident", "section"))
+dev.off()
+
+```
+
+# Cluster correlation
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+mnmat <- c()
+uniq <- unique(paste0(integrated.iso@meta.data$section,"_",integrated.iso@meta.data$ClusterName))
+for(i in 1:length(uniq)){
+  mnmat <- cbind(mnmat, apply(as.matrix(integrated.iso@assays$Spatial@data[, paste0(integrated.iso@meta.data$section,"_",integrated.iso@meta.data$ClusterName)==uniq[i]]), 1, mean))
+}
+
+df <- unique(integrated.iso@meta.data[,c("section","ClusterName")])
+rownames(df) <- paste0(df$section,"_",df$ClusterName)
+df <- df[-c(2)]
+colnames(mnmat) <- uniq
+ct=cor(mnmat)
+
+pdf("figures/Figure.sup.08f.pdf", width=8, height=6, useDingbats=FALSE)
+pheatmap(ct, annotation_col=df, cluster_rows=TRUE, cluster_cols=TRUE, fontsize = 8, clustering_method = "complete")
+dev.off()
+
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+
