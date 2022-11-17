@@ -5,11 +5,7 @@ In situ capturing technologies add tissue context to gene expression data, with 
 
 
 
-This github provides all R scripts required for SiT dataset analysis
-
-
-
-* **SiT data are deposited throught GEO, accession number GSE153859**
+**This github provides all R scripts required for SiT dataset analysis, SiT data are deposited throught GEO, accession number GSE153859**
 
 
 #### GSE153859_RAW.tar contains illumina and Nanopore raw data files
