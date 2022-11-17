@@ -1,0 +1,140 @@
+---
+title: "SiT - Mouse Olfactory Bulb (MOB) - 02.nanopore"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+```
+
+# Loading Spatial data
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00.common.import.R")
+
+MOB <- readRDS("./output/MOB.spatial.rds")
+
+```
+
+# Add Nanopore data: ISO, ISOG, JUNC and EDIT assays
+
+```{r message=FALSE, warning=FALSE, echo=FALSE, eval=T, fig.height=6, fig.width=8}
+
+all = read.delim("../nanopore/MOB_genematrix.txt", stringsAsFactors = F)
+data = all[,2:ncol(all)]
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) <- all$geneId
+vect <- colnames(MOB@assays$Spatial)
+data <- data[vect]
+MOB[["ISOG"]] <- CreateAssayObject(counts = data)
+MOB <- NormalizeData(object = MOB, assay = "ISOG")
+MOB <- ScaleData(object = MOB, assay = "ISOG")
+
+all = read.delim("../nanopore/MOB_isomatrix.txt", stringsAsFactors = F)
+data = all[,3:ncol(all)]
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) = paste(all$geneId, all$transcriptId, sep="..")
+vect <- colnames(MOB@assays$Spatial)
+idx <- grep("undef", rownames(data), invert = TRUE)
+data <- data[idx,vect]
+dim(data)
+MOB[["ISO"]] <- CreateAssayObject(counts = data)
+MOB <- NormalizeData(object = MOB, assay = "ISO")
+MOB <- scale_my_data(MOB, assay = "ISO")
+
+all = read.delim("../nanopore/MOB_juncmatrix.txt", stringsAsFactors = F)
+data = all[,2:ncol(all)]
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) = str_replace(all$junctionId, ":", "..")
+vect <- colnames(MOB@assays$Spatial)
+data <- data[,vect]
+dim(data)
+data <- data[which(Matrix::rowSums(data)>9),]
+dim(data)
+
+MOB[["JUNC"]] <- CreateAssayObject(counts = data)
+MOB <- NormalizeData(object = MOB, assay = "JUNC")
+MOB <- scale_my_data(MOB, assay = "JUNC")
+
+all = read.delim("../nanopore/MOB_snpmatrix.csv", sep=",", stringsAsFactors = F)
+data = all[,4:ncol(all)]
+dim(data)
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) = paste(all$geneId, all$transcriptId, sep=":")
+vect <- colnames(MOB@assays$Spatial)
+#idx <- grep("intergenic", rownames(data), invert = TRUE)
+#data <- data[idx,vect]
+#idx <- grep("Rik", rownames(data), invert = TRUE)
+data <- data[,vect]
+idx1 <- grep("\\.\\.A", rownames(data))
+idx2 <- grep("\\.\\.G", rownames(data))
+data <- data[c(idx1,idx2),]
+dim(data)
+
+x <- unique(sapply(strsplit(rownames(data), "\\.\\."), `[`, 1))
+countA <- data[grep("\\.\\.A",rownames(data)),]
+colnames(countA) <- colnames(data)
+rownames(countA) <- x
+countG <- data[grep("\\.\\.G",rownames(data)),]
+colnames(countG) <- colnames(data)
+rownames(countG) <- x
+ratio <- countG/(countA+countG)
+
+#countA[is.na(countA)] <- 0
+#countG[is.na(countG)] <- 0
+
+MOB[['AtoI_A']] <- Matrix::colSums(countA)
+MOB[['AtoI_G']] <- Matrix::colSums(countG)
+MOB[['AtoI_total']] <- MOB[['AtoI_A']]+MOB[['AtoI_G']]
+MOB[['AtoI_ratio']] <- MOB[['AtoI_G']]/MOB[['AtoI_total']]
+MOB[['AtoI_detected']] <- Matrix::colSums(countG > 0)
+
+MOB[["AtoI"]] <- CreateAssayObject(counts = countA)
+MOB <- SetAssayData(MOB, slot = "data", as.matrix(countG), assay = "AtoI")
+MOB <- SetAssayData(MOB, slot = "scale.data", as.matrix(ratio), assay = "AtoI")
+
+saveRDS(MOB, "./output/MOB.nanopore.rds")
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+
