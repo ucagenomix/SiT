@@ -1,0 +1,209 @@
+---
+title: "SiT - Supplementary Figure 16"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00.common.import.R")
+
+CBS1 <- readRDS("output/CBS1.nanopore.deconv.rds")
+CBS2 <- readRDS("output/CBS2.nanopore.deconv.rds")
+
+clusters <- c("Midbrain","Hippocampus area","Isocortex-1","Isocortex-2","Olfactory area","Fiber tracts","Retrosplenial area","CA1/CA2","Thalamus","Hypothalamus","CA3","DG")
+
+```
+
+# Add CBS2 Illumina editing calling
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+all = read.delim("data/CBS2.snp5817.illumina_snpmatrix.csv", sep=",", stringsAsFactors = F)
+data = all[,4:ncol(all)]
+dim(data)
+colnames(data) <- paste(colnames(data),"-1", sep="")
+rownames(data) = paste(all$geneId, all$transcriptId, sep=":")
+vect <- colnames(CBS2@assays$Spatial)
+#idx <- grep("intergenic", rownames(data), invert = TRUE)
+#data <- data[idx,vect]
+#idx <- grep("Rik", rownames(data), invert = TRUE)
+data <- data[,vect]
+idx1 <- grep("\\.\\.A", rownames(data))
+idx2 <- grep("\\.\\.G", rownames(data))
+data <- data[c(idx1,idx2),]
+dim(data)
+
+x <- unique(sapply(strsplit(rownames(data), "\\.\\."), `[`, 1))
+countA <- data[grep("\\.\\.A",rownames(data)),]
+colnames(countA) <- colnames(data)
+rownames(countA) <- x
+countG <- data[grep("\\.\\.G",rownames(data)),]
+colnames(countG) <- colnames(data)
+rownames(countG) <- x
+ratio <- countG/(countA+countG)
+
+CBS2[['AtoIllu_A']] <- Matrix::colSums(countA)
+CBS2[['AtoIllu_G']] <- Matrix::colSums(countG)
+CBS2[['AtoIllu_total']] <- CBS2[['AtoIllu_A']]+CBS2[['AtoIllu_G']]
+CBS2[['AtoIllu_ratio']] <- CBS2[['AtoIllu_G']]/CBS2[['AtoIllu_total']]
+CBS2[['AtoIllu_detected']] <- Matrix::colSums(countG > 0)
+
+CBS2[["AtoIllu"]] <- CreateAssayObject(counts = countA)
+CBS2 <- SetAssayData(CBS2, slot = "data", as.matrix(countG), assay = "AtoIllu")
+CBS2 <- SetAssayData(CBS2, slot = "scale.data", as.matrix(ratio), assay = "AtoIllu")
+
+nano <- as.data.frame(cbind(Matrix::rowSums(CBS2@assays$AtoI@counts),Matrix::rowSums(CBS2@assays$AtoI@data)))
+colnames(nano) <- c("nano.A","nano.G")
+nano$nano.total <- nano$nano.A + nano$nano.G
+nano$nano.editing <- nano$nano.G/(nano$nano.A+nano$nano.G)
+
+illu <- as.data.frame(cbind(Matrix::rowSums(CBS2@assays$AtoIllu@counts),Matrix::rowSums(CBS2@assays$AtoIllu@data)))
+colnames(illu) <- c("illu.A","illu.G")
+illu$illu.total <- illu$illu.A + illu$illu.G
+illu$illu.editing <- illu$illu.G/(illu$illu.A+illu$illu.G)
+
+dd <- merge(nano,illu, by=0, all=TRUE)
+dd[is.na(dd)] <- 0
+head(dd)
+
+nano.cbs1 <- as.data.frame(cbind(Matrix::rowSums(CBS1@assays$AtoI@counts),Matrix::rowSums(CBS1@assays$AtoI@data)))
+colnames(nano.cbs1) <- c("nano.cbs1.A","nano.cbs1.G")
+nano.cbs1$nano.cbs1.total <- nano.cbs1$nano.cbs1.A + nano.cbs1$nano.cbs1.G
+nano.cbs1$nano.cbs1.editing <- nano.cbs1$nano.cbs1.G/(nano.cbs1$nano.cbs1.A+nano.cbs1$nano.cbs1.G)
+
+rownames(dd) <- dd$Row.names
+dd <- dd[,-c(1)]
+dd2 <- merge(dd,nano.cbs1, by=0, all=TRUE)
+dd2[is.na(dd2)] <- 0
+head(dd2)
+rownames(dd2) <- dd2$Row.names
+dd2 <- dd2[,-c(1)]
+colnames(dd2) <- c("cbs2.A","cbs2.G","cbs2.depth","cbs2.ratio","illu.A","illu.G","illu.depth","illu.ratio","cbs1.A","cbs1.G","cbs1.depth","cbs1.ratio")
+head(dd2)
+
+dd2[grep("^Gria2", rownames(dd2)),]
+
+library(viridis)
+
+# correlation editing ratio CBS2 vs CBS1
+sub <- subset(dd2, dd2$cbs2.depth>19 & dd2$cbs1.depth>19)
+p1 <- ggplot(data=sub, aes(x=cbs1.ratio,y=cbs2.ratio)) + 
+  geom_point() + 
+  theme_minimal()
+dim(sub)
+cor.test(sub$cbs2.ratio,sub$cbs1.ratio, method="pearson")$estimate
+
+
+# correlation editing ratio CBS2 vs ILLUMINA
+sub <- subset(dd2, dd2$cbs2.depth>19 & dd2$illu.depth>19)
+p2 <- ggplot(data=sub, aes(x=illu.ratio,y=cbs2.ratio)) + 
+  geom_point() + 
+  theme_minimal()
+dim(sub)
+cor.test(sub$cbs2.ratio,sub$cbs1.ratio, method="pearson")$estimate
+
+pdf("figures/Figure.sup.16.pdf", width=14, height=6, useDingbats=FALSE)
+plot_grid(p1,p2)
+dev.off()
+
+ggplot(data=subset(dd, dd$nano.total>9 & dd$illu.total>9), aes(x=nano.editing,y=illu.editing, fill=log2(illu.total), size=log2(nano.total))) + 
+  geom_point(alpha=0.8, shape=21, color="black") + 
+  scale_size(range = c(.1, 5), name="log2(nano.total)") + 
+  theme_minimal()+
+  scale_fill_gradientn(colours = c("grey","red"))
+
+
+x1 <- as.data.frame(table(dd$nano.total))
+x2 <- as.data.frame(table(dd$illu.total))
+x1$id <- "nanopore"
+x2$id <- "illumina"
+xx <- rbind(x1,x2)
+
+ggplot(xx, aes(x=Var1, y=Freq, fill=id)) +
+    geom_bar(stat='identity', position='dodge') +
+    theme_minimal() +
+    coord_cartesian(xlim=c(0,20))
+
+ggplot(data=dd, aes(x=nano.editing,y=illu.editing, fill=log10(nano.total), size=log10(illu.total))) + 
+  geom_point(alpha=0.5, shape=21, color="black") + 
+  theme_minimal() + 
+  scale_fill_gradientn(colours = c("grey","red"))
+
+dim(subset(dd, nano.total>0 & illu.total>0))
+
+p1 <- SpatialFeaturePlot(CBS2, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+p2 <- SpatialFeaturePlot(CBS2, features = c("AtoIllu_A","AtoIllu_G","AtoIllu_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+
+p3 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+
+p4 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoIllu_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+
+p5 <- SpatialFeaturePlot(CBS1, features = c("AtoI_A","AtoI_G","AtoI_ratio"), pt.size.factor=1.6, alpha = c(1, 1), max.cutoff = c(300,80,0.4))
+
+p6 <- ggplot(data=CBS2@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0))
+  
+pdf("spatial.editing.pdf", width=20, height=12, useDingbats=FALSE)
+plot_grid(p1,p3,p2,p4,p5,p6,ncol=2)
+dev.off()
+
+a <- aggregate(CBS2@meta.data$AtoI_A, list(CBS2@meta.data$ClusterName), sum)
+colnames(a) <- c("group1","A")
+g <- aggregate(CBS2@meta.data$AtoI_G, list(CBS2@meta.data$ClusterName), sum)
+colnames(g) <- c("group2","G")
+all <- cbind(a,g)
+all$ratio <- 100* all$G / (all$A+all$G)
+all[is.na(all)] <- 0
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+

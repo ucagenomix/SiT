@@ -1,0 +1,74 @@
+---
+title: "SiT - Supplementary Figure 15"
+author: '[Kevin Lebrigand](mailto:lebrigand@ipmc.cnrs.fr)§, Joseph Bergenstråhle §, Kim Thrane §, Annelie Mollbrink, Pascal Barbry, Rainer Waldmann and Joakim Lundeberg'
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+abstract: 'The spatial landscape of gene expression isoforms in tissue sections.'
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+  html_notebook:
+    code_folding: none
+    theme: journal
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+<style type="text/css">
+
+body, td {
+   font-size: 15px;
+}
+code.r{
+  font-size: 15px;
+}
+pre {
+  font-size: 15px
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  cache = FALSE,
+  cache.lazy = FALSE,
+  tidy = TRUE
+)
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=TRUE, eval=T, fig.height=4, fig.width=6}
+
+setwd("thisdir")
+source("00.common.import.R")
+
+MOB <- readRDS("output/MOB.nanopore.deconv.rds")
+
+p1 <- SpatialFeaturePlot(MOB, features = c("AtoI_ratio"), pt.size.factor=2, alpha = c(1, 1), max.cutoff = c(0.4))
+
+col=ggplotColours(n = 5)
+p2 <- ggplot(data=MOB@meta.data, aes(x=ClusterName,y=AtoI_ratio, group=ClusterName))+
+  geom_boxplot(outlier.shape = NA, fill=col, color="black") + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) +
+  #geom_text(aes(label=geneCount), vjust=1.5, color="black", position = position_dodge(0.9), size=3)+
+  scale_y_continuous(limits=c(0,0.4), breaks=seq(0,0.4,0.1), expand = c(0, 0)) +
+  theme_minimal() + theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+avg <- AverageExpression(object = MOB, return.seurat = TRUE, assay="Spatial", slot="data")
+
+pdf("figures/Figure.sup.15.pdf", width=6, height=4, useDingbats=FALSE)
+plot_grid(p1,p2)
+pheatmap(avg@assays$Spatial@scale.data[c("Adar","Adarb1","Adarb2"),], cluster_rows=FALSE, cluster_cols=FALSE, fontsize = 8, clustering_method = "complete", clustering_distance_rows = "manhattan")
+dev.off()
+
+```
+
+# Session Info
+
+```{r sessinf}
+sessionInfo()
+```
+
